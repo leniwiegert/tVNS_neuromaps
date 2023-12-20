@@ -3,6 +3,7 @@
 # --------------------- NEUROMAPS INSTALLATION --------------------- #
 
 # This package requires Python 3.7+
+# Add my version + extra environment
 
 # --- Connectome Workbench ---
 # Download connectome workbench: https://www.humanconnectome.org/software/get-connectome-workbench
@@ -17,10 +18,12 @@ printenv SHELL
 chsh -s /bin/bash
 # Set environment variable (make sure to add your own path):
 echo 'export PATH=$PATH:/Users/leni/Documents/Master/python/workbench/bin_macosx64' >> ~/.bash_profile
-# Restart shell.
+# Restart shell or run 'source ~/.bash_profile'
 # Check with:
 echo $PATH
 # New path should be added.
+# If not try and enter your password:
+# echo 'export PATH=$PATH:/Users/leni/Documents/Master/python/workbench/bin_macosx64' | sudo tee -a ~/.bash_profile
 # Make sure Connectome Workbench is properly installed:
 wb_command -version
 
@@ -43,7 +46,21 @@ git commit -m "New commit"
 git push origin master
 '''
 
+#--------------------- FETCHING ATLASES AND ANNOTATIONS ---------------------  #
 
+# example for fetching atlases from neuromaps:
+from neuromaps import datasets
+# general function: neuromaps.datasets.fetch_atlas()
+fslr = datasets.fetch_atlas(atlas='fslr', density='32k')
 
-
+'''
+# Annotations are identified by a len-4 tuple of values:
+# Source, description, coordinate system, density/resolution
+# Search annotations (the function also accepts keyword arguments in case we want to narrow down the list of returned results):
+# neuromaps.datasets.available_annotations(source='fisher')
+neuromaps.datasets.available_annotations()
+# Find example annotation:
+for annotation in available_annotations():
+    print(annotation)
+'''
 
