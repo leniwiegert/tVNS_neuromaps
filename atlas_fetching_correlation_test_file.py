@@ -31,6 +31,7 @@ print(f'Available annotations: {len(annotations)}')
 # Example: Download of PET tracer binding (BPnd) to D2 (dopamine receptor) from a 2015 study
 alarkurtti = datasets.fetch_annotation(source='alarkurtti2015', desc='raclopride')
 print(alarkurtti)
+# The .nii file of this annotation can now be found in the corresponding folder!
 
 
 #--------------- USING SPATIAL NULL MODELS ----------------#
