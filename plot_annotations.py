@@ -17,7 +17,7 @@ from nilearn.plotting import plot_roi
 # The code atlas_fetching_correlation_test_file.py saves the desired annotation as .nii file on your computer
 # Running the atlas_fetching code prior to this file is required
 
-# Load data with its path
+# Load data with its path (make sure to extract the .nii file first from the .nii.gz file)
 img = nib.load('/Users/leni/neuromaps-data/annotations/alarkurtti2015/raclopride/MNI152/source-alarkurtti2015_desc-raclopride_space-MNI152_res-3mm_feature.nii')
 
 #----------- WORK WITH IMAGE DATA ----------#
