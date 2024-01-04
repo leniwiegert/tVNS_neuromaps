@@ -1,8 +1,6 @@
 # Loading and displaying of an fMRI dataset of 41 patients
 # Author: Lena Wiegert
 
-import os
-import pytest
 import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
