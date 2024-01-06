@@ -92,18 +92,6 @@ for volume_file in volume_files:
     mean_images.append(mean_img_vol)
 # Now, mean_images contains the mean images for each volume
 
-'''
-# not finished yet
-#----------- CREATE A STATIC 3D PLOT ----------#
-
-# Extract one volume (e.g. the first volume)
-# vol_to_display = img.slicer[..., 0]
-# Display a static 3D image
-vol_1 = nib.load('/Users/leni/Documents/Master/Data/volume_1.nii')
-plotting.plot_stat_map(vol_1, threshold=20)
-# Display an interactive plot (3D), doesn't work yet
-# plotting.view_img(vol_1,threshold='auto')
-'''
 
 #----------- VISUALIZING THE AVERAGE SIGNAL OF A REGION ----------#
 
@@ -122,6 +110,71 @@ overlay = nli.math_img('np.mean(img,axis=3) > 0', img=cluster)
 # Plotting, add background
 plotting.plot_roi(overlay, bg_img=mask_image, display_mode='z', dim=-.5, cmap='plasma');
 plotting.show()
+
+
+#----------- GLASS BRAIN ----------#
+
+# Visualization of brain images for a good overview of all significant voxels in the image
+# Choose the respective volume
+
+localizer_tmap = '/Users/leni/Documents/Master/Data/volume_1.nii'
+
+plotting.plot_glass_brain(localizer_tmap, threshold=3, colorbar=True,
+                          title='plot_glass_brain with display_mode="lyrz"',
+                          plot_abs=False, display_mode='lyrz', cmap='rainbow')
+plotting.show()
+
+
+
+'''
+# Baustelle
+#----------- CREATE A STATIC 3D PLOT ----------#
+
+# Display a static 3D image
+vol_1 = nib.load('/Users/leni/Documents/Master/Data/volume_1.nii')
+plotting.plot_stat_map(vol_1, threshold='auto', cmap='plasma', colorbar='True')
+plotting.show()
+'''
+
+
+'''
+# Baustelle:
+#----------- LINEAR PLOT OF THE SIGNAL OF EACH VOLUME ----------#
+
+# Apply overlay to original functional image
+all_volumes = apply_mask(img, overlay)
+# Bring the volumes back into the original 4D space with unmask
+img_volumes = unmask(all_volumes, overlay)
+
+# Compute mean trace of all volumes and plot the mean signal against the amount of 41
+
+# Plot the mean signal of each volume against the volume indices
+volume_numbers = np.arange(1, 42)
+# Flatten the spatial dimensions and calculate the mean signal for each volume
+mean_signals = img_volumes.get_fdata().reshape(img_volumes.shape[0], -1).mean(axis=1)
+
+
+plt.plot(volume_numbers, mean_signals, marker='o', linestyle='-', label='Mean Signal')
+plt.xlabel('Volume Index')
+plt.ylabel('Mean Signal')
+plt.title('Mean Signal Across Volumes')
+plt.legend()
+plt.show()
+
+#-----------#
+volume_numbers = np.arange(1, 42)
+for volume_index in range(img_volumes.shape[0]):
+    volume_data = img_volumes.get_fdata()[volume_index].mean()  # Calculate the mean over all elements
+    plt.plot(volume_numbers, [volume_data]*len(volume_numbers), label=f'Volume {volume_index + 1}')
+
+plt.xlabel('Volume Index')
+plt.ylabel('Mean Signal')
+plt.title('Mean Signal of Each Volume Across Volumes')
+plt.legend()
+plt.show()
+'''
+
+
 
 
 
