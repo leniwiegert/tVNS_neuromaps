@@ -4,18 +4,13 @@ import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
 import nilearn
-from matplotlib.pyplot import colormaps
-from nilearn import (plotting, datasets)
+from nilearn import plotting
 from nilearn import image as nli
-from nibabel.testing import data_path
 from nilearn.regions import connected_regions
 from neuromaps.datasets import fetch_annotation
 from neuromaps.resampling import resample_images
 from nilearn.plotting import plot_roi
-from nilearn.masking import apply_mask
-from nilearn.masking import unmask
 from matplotlib.colors import Normalize
-from matplotlib import cm
 from nilearn.image import resample_img
 from scipy.stats import pearsonr
 
@@ -40,6 +35,7 @@ img_data_4d = img.get_fdata()
 # Using a pre-defined brain mask (standard example brain for mango from the NAS)
 mask_image = nib.load('/Users/leni/Documents/Master/Data/MNI152_T1_04mm_brain.nii')
 mask_data_4d = mask_image.get_fdata()
+# Double Check: There is brain activity (non-zero-values) in the array.
 
 # Separate the volumes and create 41 NIfTI files
 for volume_index in range(img_data_4d.shape[-1]):
@@ -98,15 +94,21 @@ for volume_file in volume_files:
 # Keep only voxels with a higher value than 95% of all voxels
 # Change the following two lines, depending on which volume you want to display (index is one number lower)
 mean_img_vol_1 = mean_images[0]
-thr = nli.threshold_img(mean_img_vol_1, threshold='95%')
+mean_img_vol_1_data = mean_img_vol_1.get_fdata()
+# Double Check: There are non-NaN values in the array.
+
+'''
+#why this threshold tho?
+#thr = nli.threshold_img(mean_img_vol_1, threshold='95%')
+
 # Keep the regions that are bigger than 1000mm^3
 voxel_size = np.prod(thr.header['pixdim'][1:4])  # Size of 1 voxel in mm^3
 print(voxel_size)
+
 # Create a mask that only keeps those big clusters
 cluster = connected_regions(thr, min_region_size=1000. / voxel_size, smoothing_fwhm=1)[0]
 # Binarize the cluster file to create a overlay image
 #overlay = nli.math_img('np.mean(img,axis=3) > 0', img=cluster)
-
 
 # Handle non-finite values in the cluster data
 cluster_data = cluster.get_fdata()
@@ -115,10 +117,14 @@ cluster_data[np.isnan(cluster_data)] = 0  # Replace NaN with 0
 # Create a colormap mask based on the values in the cluster
 cmap_mask_data = np.mean(cluster_data, axis=3)  # Adjust the threshold as needed
 cmap_mask_img = nib.Nifti1Image(cmap_mask_data.astype(np.float32), cluster.affine)
+'''
+
 
 # Replace non-finite values with a gray matter mask
 gray_matter_mask_file = '/Users/leni/Documents/Master/Data/out_GM_p_0_15.nii'  # Provide the path to your gray matter mask
 gray_matter_mask = nib.load(gray_matter_mask_file)
+
+cmap_mask_img = mean_img_vol_1
 
 # Resample gray matter mask to match the resolution of cmap_mask_img
 gray_matter_mask_resampled = nli.resample_to_img(gray_matter_mask, cmap_mask_img)
@@ -128,14 +134,22 @@ if not np.all(gray_matter_mask_resampled.shape == cmap_mask_img.shape):
     raise ValueError('Shape of input volume is incompatible.')
 
 # Create a new mask by keeping only non-zero voxels in both masks
-combined_mask_data = np.logical_and(cmap_mask_img.get_fdata() > 0, gray_matter_mask_resampled.get_fdata() > 0)
+#combined_mask_data = np.logical_and(cmap_mask_img.get_fdata() > 0, gray_matter_mask_resampled.get_fdata() > 0)
+
+# Create a new mask by keeping only non-NaN values in both masks
+combined_mask_data = np.where(np.isnan(cmap_mask_img.get_fdata()), gray_matter_mask_resampled.get_fdata(), cmap_mask_img.get_fdata())
 
 # Create a new image with the combined mask
 combined_mask_img = nib.Nifti1Image(combined_mask_data.astype(np.float32), cmap_mask_img.affine)
 
+# Necessary?
 # Make sure the affines are the same
 combined_mask_img = nli.resample_to_img(combined_mask_img, mask_image)
 
+# Extract data from Nifti1Image
+cmap_mask_img_data = combined_mask_img.get_fdata()
+# Normalize the colorbar based on your data values
+norm = Normalize(vmin=np.min(cmap_mask_img_data), vmax=np.max(cmap_mask_img_data))
 
 # Plotting, add background with colormap mask including gray matter
 fig, ax = plt.subplots(figsize=(8, 4))  # Adjust the figure size as needed (width, height)
@@ -144,75 +158,53 @@ plotting.plot_roi(
     bg_img=mask_image,
     display_mode='z',
     dim=-.5,
-    cmap='gist_rainbow',
+    cmap='hsv',
     cut_coords=None,    # Add this line to automatically choose the cut coordinates
-    colorbar=False,     # Disable Nilearn colorbar
-    axes=ax
+    colorbar=True,
+    axes=ax,
+    vmin=np.min(cmap_mask_img_data),  # Set the vmin and vmax parameters
+    vmax=np.max(cmap_mask_img_data)
 )
-
-# Manually adjust the colorbar to represent the values in your data
-norm = Normalize(vmin=np.min(cmap_mask_img.get_fdata()), vmax=np.max(cmap_mask_img.get_fdata()))
-cbar = plt.colorbar(ax.images[0], ax=ax, orientation='vertical', fraction=0.046, pad=0.02)
-cbar.set_label('Data Value')
 plt.show()
 
 
-
-'''
-# Baustelle
-
 #------------ SPATIAL CORRELATIONS ------------#
-
 # Test for combined_mask_data and an example neuromaps annotation (here: NE receptor map)
 
-# Fetch annotation (Ding et al. 2010)
-ding2010 = fetch_annotation(source='ding2010')
+# Fetch annotation
+hesse2017 = fetch_annotation(source='hesse2017')
 
 # Resample the second image to match the dimensions of the first image
-#img_ding2010_resampled = resample_img(ding2010, target_affine=combined_mask_img.affine,
-#                                        target_shape=combined_mask_img.shape, interpolation='nearest')
-data_res, ding_res = resample_images(src=combined_mask_data, trg=ding2010,
-                                  src_space='MNI152', trg_space='MNI152',
-                                  method='linear', resampling='downsample_only')
+img_hesse2017_resampled = resample_img(hesse2017, target_affine=combined_mask_img.affine,
+                                       target_shape=combined_mask_img.shape,
+                                       interpolation='nearest')
 
+data_res, hesse_res = resample_images(src=combined_mask_img, trg=hesse2017,
+                                      src_space='MNI152', trg_space='MNI152',
+                                      method='linear', resampling='downsample_only')
 
 # Extract data arrays
-data_combined_mask = data_res
-data_ding2010 = ding2010
+#data_combined_mask = data_res
+data_hesse2017_rs = img_hesse2017_resampled.get_fdata()
 
 # Check map lengths
-#print("Original lengths - data_combined_mask:", len(data_combined_mask), "data_ding2010:", len(data_ding2010))
+print("Original lengths - data_combined_mask:", len(cmap_mask_img_data), "data_hesse2017:", len(data_hesse2017_rs))
 
-#min_length = min(len(data_combined_mask), len(data_ding2010))
-#data_combined_mask = data_combined_mask[:min_length]
-#data_ding2010 = data_ding2010[:min_length]
-
-#print("Adjusted lengths - data_combined_mask:", len(data_combined_mask), "data_ding2010:", len(data_ding2010))
-
-
-# Check if my data is constant
-#is_map1_constant = np.all(data_combined_mask == data_combined_mask[0])
-
-# Check if map2 is constant
-#is_map2_constant = np.all(data_ding2010 == data_ding2010[0])
-
-# Print the results
-#print("Is map1 constant?", is_map1_constant)
-#print("Is map2 constant?", is_map2_constant)
-
-#print(data_ding2010)
+# Flatten the arrays while maintaining spatial correspondence
+data_combined_mask_flattened = cmap_mask_img_data.flatten()
+data_hesse2017_flattened = data_hesse2017_rs.flatten()
 
 # Calculate spatial correlation using Pearson correlation coefficient
-corr_coeff, _ = pearsonr(data_combined_mask, data_ding2010)
-
+corr_coeff, _ = pearsonr(data_combined_mask_flattened, data_hesse2017_flattened)
 print(f"Spatial Correlation: {corr_coeff:.2f}")
 
-# Some issues:
-# Spatial Correlation: nan
-# --> nan values in Ding 2010?
-# ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
-# This warning suggests that one or more of your input arrays for calculating the correlation coefficient are constant,
-# meaning all values are the same. In such cases, the correlation coefficient is not defined.
-# Check your data to ensure variability
+# The Pearson correlation coefficient ranges from -1 to 1, where:
+# 1 indicates a perfect positive linear relationship,
+# 0 indicates no linear relationship,
+# -1 indicates a perfect negative linear relationship.
 
-'''
+# Questions:
+# Is flattening to a 1D array okay if it maintains the spatial correspondence between two arrays?
+# What about the threshold/clustering? Necessary?
+
+
