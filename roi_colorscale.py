@@ -15,6 +15,8 @@ from nilearn.image import resample_img
 from scipy.stats import pearsonr
 
 
+
+
 #----------- LOAD AND GET TO KNOW THE DATA ----------#
 
 img = nib.load('/Users/leni/Documents/Master/Data/4D_rs_fCONF_del_taVNS_sham.nii')
@@ -151,6 +153,7 @@ cmap_mask_img_data = combined_mask_img.get_fdata()
 # Normalize the colorbar based on your data values
 norm = Normalize(vmin=np.min(cmap_mask_img_data), vmax=np.max(cmap_mask_img_data))
 
+'''
 # Plotting, add background with colormap mask including gray matter
 fig, ax = plt.subplots(figsize=(8, 4))  # Adjust the figure size as needed (width, height)
 plotting.plot_roi(
@@ -165,8 +168,8 @@ plotting.plot_roi(
     vmin=np.min(cmap_mask_img_data),  # Set the vmin and vmax parameters
     vmax=np.max(cmap_mask_img_data)
 )
-plt.show()
-
+#plt.show()
+'''
 
 #------------ SPATIAL CORRELATIONS ------------#
 # Test for combined_mask_data and an example neuromaps annotation (here: NE receptor map)
@@ -190,6 +193,12 @@ data_hesse2017_rs = img_hesse2017_resampled.get_fdata()
 # Check map lengths
 print("Original lengths - data_combined_mask:", len(cmap_mask_img_data), "data_hesse2017:", len(data_hesse2017_rs))
 
+from neuromaps.stats import compare_images
+corr = compare_images(data_res, hesse_res, metric='pearsonr')
+print(f'r = {corr:.3f}')
+
+
+'''
 # Flatten the arrays while maintaining spatial correspondence
 data_combined_mask_flattened = cmap_mask_img_data.flatten()
 data_hesse2017_flattened = data_hesse2017_rs.flatten()
@@ -197,6 +206,7 @@ data_hesse2017_flattened = data_hesse2017_rs.flatten()
 # Calculate spatial correlation using Pearson correlation coefficient
 corr_coeff, _ = pearsonr(data_combined_mask_flattened, data_hesse2017_flattened)
 print(f"Spatial Correlation: {corr_coeff:.2f}")
+'''
 
 # The Pearson correlation coefficient ranges from -1 to 1, where:
 # 1 indicates a perfect positive linear relationship,
@@ -204,7 +214,77 @@ print(f"Spatial Correlation: {corr_coeff:.2f}")
 # -1 indicates a perfect negative linear relationship.
 
 # Questions:
-# Is flattening to a 1D array okay if it maintains the spatial correspondence between two arrays?
 # What about the threshold/clustering? Necessary?
+
+'''
+#------------ SPATIAL CORRELATIONS FOR ALL 41 FILES ------------#
+
+# Compared to Hesse 2017
+
+correlation_values = []
+
+for i in range(1, 42):
+    filename_mean = f'/Users/leni/Documents/Master/Data/volume_{i}.nii'
+    filename_combined_mask = f'combined_mask_img_{i}.nii'
+    mean_img_vol = nib.load(filename_mean)
+
+    # Additional code to define combined_mask_data_1 to combined_mask_data_41
+    gray_matter_mask_resampled = nilearn.image.resample_to_img(gray_matter_mask, mean_img_vol)
+
+    if not np.all(gray_matter_mask_resampled.shape == mean_img_vol.shape):
+        raise ValueError('Shape of input volume is incompatible.')
+
+    combined_mask_data = np.where(np.isnan(mean_img_vol.get_fdata()), gray_matter_mask_resampled.get_fdata(), mean_img_vol.get_fdata())
+
+    combined_mask_img = nib.Nifti1Image(combined_mask_data.astype(np.float32), mean_img_vol.affine)
+    combined_mask_img = nilearn.image.resample_to_img(combined_mask_img, mask_image)
+
+    combined_mask_img_data = combined_mask_img.get_fdata()
+    norm = Normalize(vmin=np.min(combined_mask_img_data), vmax=np.max(combined_mask_img_data))
+
+    # Continue with the rest of the code as in the previous example
+    # Fetch annotation
+    hesse2017 = fetch_annotation(source='hesse2017')
+
+    # Resample the second image to match the dimensions of the first image
+    img_hesse2017_resampled = nilearn.image.resample_img(hesse2017, target_affine=combined_mask_img.affine,
+                                                         target_shape=combined_mask_img.shape,
+                                                         interpolation='nearest')
+
+    data_res, hesse_res = resample_images(src=combined_mask_img, trg=hesse2017,
+                                          src_space='MNI152', trg_space='MNI152',
+                                          method='linear', resampling='downsample_only')
+
+    # Extract data arrays
+    data_hesse2017_rs = img_hesse2017_resampled.get_fdata()
+
+    corr = compare_images(data_res, hesse_res, metric='pearsonr')
+    correlation_values.append(corr)
+
+    print(f"Processing {filename_combined_mask}")
+    print("Original lengths - data_combined_mask:", len(combined_mask_img_data), "data_hesse2017:", len(data_hesse2017_rs))
+    print(f'r = {corr:.3f}')
+    print("\n")
+
+# Print the summary array of correlation values
+print("Here are the spatial correlations for my data with Hesse 2017:")
+print(np.array(correlation_values))
+
+'''
+
+
+# Assuming correlation_values is your array of correlation values
+correlation_values = np.array([-0.089, 0.057, 0.174, 0.176, -0.203, 0.141, -0.109, 0.127, -0.039, 0.021, -0.057, -0.172, 0.191, 0.198, 0.252, -0.051, -0.029, 0.224, 0.183, -0.102, 0.054, 0.191, -0.043, 0.203, -0.095, -0.094, -0.215, 0.011, -0.315, 0.073, -0.049, 0.047, -0.149, 0.429, 0.114, -0.065, -0.092, -0.146, 0.127, -0.122, -0.085])
+
+# Generate a range from 1 to 41
+x_values = np.arange(1, 42)
+
+# Plot the values
+plt.plot(x_values, correlation_values, marker='o', linestyle='-')
+plt.title('Spatial Correlation Values')
+plt.xlabel('Volume Index')
+plt.ylabel('Correlation Coefficient')
+plt.grid(True)
+plt.show()
 
 
