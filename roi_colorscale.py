@@ -12,9 +12,9 @@ from neuromaps.resampling import resample_images
 from nilearn.plotting import plot_roi
 from matplotlib.colors import Normalize
 from nilearn.image import resample_img
-from scipy.stats import pearsonr
-
-
+from neuromaps import stats
+from neuromaps import datasets, images, nulls
+from neuromaps.stats import compare_images
 
 
 #----------- LOAD AND GET TO KNOW THE DATA ----------#
@@ -100,7 +100,8 @@ mean_img_vol_1_data = mean_img_vol_1.get_fdata()
 # Double Check: There are non-NaN values in the array.
 
 '''
-#why this threshold tho?
+# Threshold/Clustering not needed because of the gray matter mask
+
 #thr = nli.threshold_img(mean_img_vol_1, threshold='95%')
 
 # Keep the regions that are bigger than 1000mm^3
@@ -126,7 +127,8 @@ cmap_mask_img = nib.Nifti1Image(cmap_mask_data.astype(np.float32), cluster.affin
 gray_matter_mask_file = '/Users/leni/Documents/Master/Data/out_GM_p_0_15.nii'  # Provide the path to your gray matter mask
 gray_matter_mask = nib.load(gray_matter_mask_file)
 
-cmap_mask_img = mean_img_vol_1
+# Choose either mean_img for all volumes or mean_img_vol_1-41 for the desired volume
+cmap_mask_img = mean_img
 
 # Resample gray matter mask to match the resolution of cmap_mask_img
 gray_matter_mask_resampled = nli.resample_to_img(gray_matter_mask, cmap_mask_img)
@@ -134,9 +136,6 @@ gray_matter_mask_resampled = nli.resample_to_img(gray_matter_mask, cmap_mask_img
 # Ensure both masks have the same shape
 if not np.all(gray_matter_mask_resampled.shape == cmap_mask_img.shape):
     raise ValueError('Shape of input volume is incompatible.')
-
-# Create a new mask by keeping only non-zero voxels in both masks
-#combined_mask_data = np.logical_and(cmap_mask_img.get_fdata() > 0, gray_matter_mask_resampled.get_fdata() > 0)
 
 # Create a new mask by keeping only non-NaN values in both masks
 combined_mask_data = np.where(np.isnan(cmap_mask_img.get_fdata()), gray_matter_mask_resampled.get_fdata(), cmap_mask_img.get_fdata())
@@ -153,7 +152,7 @@ cmap_mask_img_data = combined_mask_img.get_fdata()
 # Normalize the colorbar based on your data values
 norm = Normalize(vmin=np.min(cmap_mask_img_data), vmax=np.max(cmap_mask_img_data))
 
-'''
+
 # Plotting, add background with colormap mask including gray matter
 fig, ax = plt.subplots(figsize=(8, 4))  # Adjust the figure size as needed (width, height)
 plotting.plot_roi(
@@ -168,58 +167,91 @@ plotting.plot_roi(
     vmin=np.min(cmap_mask_img_data),  # Set the vmin and vmax parameters
     vmax=np.max(cmap_mask_img_data)
 )
-#plt.show()
-'''
+plt.show()
 
-#------------ SPATIAL CORRELATIONS ------------#
-# Test for combined_mask_data and an example neuromaps annotation (here: NE receptor map)
 
-# Fetch annotation
-hesse2017 = fetch_annotation(source='hesse2017')
+#------------ SPATIAL CORRELATIONS WITH THE MEAN IMAGE ------------#
 
-# Resample the second image to match the dimensions of the first image
-img_hesse2017_resampled = resample_img(hesse2017, target_affine=combined_mask_img.affine,
-                                       target_shape=combined_mask_img.shape,
-                                       interpolation='nearest')
+# Test for mean_img_data and an example neuromaps annotation (here: NE receptor map hesse 2017)
 
-data_res, hesse_res = resample_images(src=combined_mask_img, trg=hesse2017,
+# Fetch desired annotation (add description, space and density if needed for identification)
+anno = fetch_annotation(source='hesse2017')
+
+# Transformation with 'downsample_only’: The higher-resolution map is transformed to the space of the lower-resolution map
+# Except if volumetric and non-volumetric space, then it's always transformed into the non-vol. space
+data_res, anno_res = resample_images(src=combined_mask_img, trg=anno,
                                       src_space='MNI152', trg_space='MNI152',
                                       method='linear', resampling='downsample_only')
 
-# Extract data arrays
-#data_combined_mask = data_res
-data_hesse2017_rs = img_hesse2017_resampled.get_fdata()
-
-# Check map lengths
-print("Original lengths - data_combined_mask:", len(cmap_mask_img_data), "data_hesse2017:", len(data_hesse2017_rs))
-
-from neuromaps.stats import compare_images
-corr = compare_images(data_res, hesse_res, metric='pearsonr')
-print(f'r = {corr:.3f}')
-
-
-'''
-# Flatten the arrays while maintaining spatial correspondence
-data_combined_mask_flattened = cmap_mask_img_data.flatten()
-data_hesse2017_flattened = data_hesse2017_rs.flatten()
-
-# Calculate spatial correlation using Pearson correlation coefficient
-corr_coeff, _ = pearsonr(data_combined_mask_flattened, data_hesse2017_flattened)
-print(f"Spatial Correlation: {corr_coeff:.2f}")
-'''
+corr = compare_images(data_res, anno_res, metric='pearsonr')
+print(f'The correlation value for the mean image of my data and the neuromaps annotation is r = {corr:.3f}.')
 
 # The Pearson correlation coefficient ranges from -1 to 1, where:
 # 1 indicates a perfect positive linear relationship,
 # 0 indicates no linear relationship,
 # -1 indicates a perfect negative linear relationship.
 
-# Questions:
-# What about the threshold/clustering? Necessary?
 
-'''
+# --- Plotting ---#
+
+# Plotting the correlations of NE, dopamine and serotonin PET maps with the mean image of my data
+
+# Defining data with values and names
+data = {
+    'ding2010': -0.114,
+    'hesse2017': -0.085,
+    'alarkurtti2015': -0.088,
+    'dukart2018': 0.017,
+    'jaworska2020': -0.094,
+    'kaller2017': -0.078,
+    'sandiego2015': -0.089,
+    'sasaki2012': -0.091,
+    'smith2017': -0.085,
+    'fazio2016': -0.030,
+    'gallezot2010': -0.133,
+    'radnakrishnan2018': -0.107,
+    'salvi2012_1': 0.023,
+    'salvi2012_2': -0.019,
+    'salvi2012_3': -0.085,
+    'salvi2012_4': 0.112
+}
+
+# Extract names and values from the data dictionary
+annos = list(data.keys())
+values = list(data.values())
+
+# Define categories for each name
+categories = {
+    'NE PET': ['ding2010', 'hesse2017'],
+    'Dopamine PET': ['alarkurtti2015', 'dukart2018', 'jaworska2020', 'kaller2017', 'sandiego2015', 'sasaki2012', 'smith2017'],
+    'Serotonin PET': ['fazio2016', 'gallezot2010', 'radnakrishnan2018', 'salvi2012_1', 'salvi2012_2', 'salvi2012_3', 'salvi2012_4']
+}
+
+# Define colors for each category
+category_colors = {
+    'NE PET': 'lightcoral',
+    'Dopamine PET': 'lightgreen',
+    'Serotonin PET': 'lightblue'
+}
+
+# Plot the data with shaded background for each category
+for category, names_in_category in categories.items():
+    plt.axvspan(annos.index(names_in_category[0]) - 0.5, annos.index(names_in_category[-1]) + 0.5,
+                facecolor=category_colors[category], alpha=0.5)
+
+plt.scatter(annos, values, color='black', s=30, zorder=10)
+plt.axhline(0, color='black', linestyle='dashed', linewidth=1)  # Add a horizontal line at y=0
+plt.xlabel('Annotation')
+plt.ylabel('Pearson correlation coefficient')
+plt.title('Spatial correlation of the tVNS data (mean image) and NE, dopamine, and serotonin PET maps')
+plt.xticks(rotation=45)  # Rotate x-axis labels for better visibility
+plt.show()
+
+
+
 #------------ SPATIAL CORRELATIONS FOR ALL 41 FILES ------------#
 
-# Compared to Hesse 2017
+# Each volume of my data compared to Hesse 2017
 
 correlation_values = []
 
@@ -270,8 +302,8 @@ for i in range(1, 42):
 print("Here are the spatial correlations for my data with Hesse 2017:")
 print(np.array(correlation_values))
 
-'''
 
+# --- Plotting ---#
 
 # Assuming correlation_values is your array of correlation values
 correlation_values = np.array([-0.089, 0.057, 0.174, 0.176, -0.203, 0.141, -0.109, 0.127, -0.039, 0.021, -0.057, -0.172, 0.191, 0.198, 0.252, -0.051, -0.029, 0.224, 0.183, -0.102, 0.054, 0.191, -0.043, 0.203, -0.095, -0.094, -0.215, 0.011, -0.315, 0.073, -0.049, 0.047, -0.149, 0.429, 0.114, -0.065, -0.092, -0.146, 0.127, -0.122, -0.085])
@@ -286,5 +318,8 @@ plt.xlabel('Volume Index')
 plt.ylabel('Correlation Coefficient')
 plt.grid(True)
 plt.show()
+
+
+
 
 
