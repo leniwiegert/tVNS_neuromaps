@@ -7,9 +7,9 @@ from neuromaps.resampling import resample_images
 from neuromaps.stats import compare_images
 from nilearn import image as nli
 import os
-from tqdm import tqdm
 import nibabel as nib
 import matplotlib.pyplot as plt
+# from tqdm import tqdm
 
 
 #-------- PREPARE DATA --------#
@@ -24,6 +24,9 @@ volume_files = [f for f in os.listdir(data_directory) if f.startswith('volume_')
 gray_matter_mask_file = '/Users/leni/Documents/Master/Data/out_GM_p_0_15.nii'
 gray_matter_mask = nib.load(gray_matter_mask_file)
 
+
+#-------- GRAY MATTER MASK + RANDOMIZATION + CALCULATION OF MEANS--------#
+
 # Create an empty dictionary to store the non_rand mask data for each volume
 non_rand_mask_data_dict = {}
 
@@ -31,7 +34,7 @@ non_rand_mask_data_dict = {}
 rand_data_arrays = {}
 
 # Specify the number of randomizations (10 for testing, 1000 when it works)
-num_randomizations = 10
+num_randomizations = 100
 
 # Iterate over each volume file
 for volume_file in volume_files:
@@ -57,19 +60,33 @@ for volume_file in volume_files:
 
     # Save the non_rand mask image
     non_rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_non_rand_mask.nii.gz')
-
-    # Create a randomized copy of the non_rand mask data
-    rand_mask_data = non_rand_mask_data * np.random.choice([-1, 1], size=non_rand_mask_data.shape)
+    print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
 
     # Save the randomized data array for this volume in the dictionary
-    rand_data_arrays[volume_file] = rand_mask_data
+    #rand_data_arrays[volume_file] = rand_mask_data
 
     # Optionally, save the randomized mask data as a NIfTI file
-    rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
-    rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_rand_mask.nii.gz')
+    #rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
+    #rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_rand_mask.nii.gz')
 
-    # Compute the mean for each volume outside of the loop for non_rand and randomized data
+    # Iterate for the specified number of randomizations
+    for randomization_index in range(num_randomizations):
+        # Create a randomized copy of the non_rand mask data
+        rand_mask_data = non_rand_mask_data * np.random.choice([-1, 1], size=non_rand_mask_data.shape)
 
+        # Save the randomized data array for this volume in the dictionary
+        rand_data_arrays[f"{volume_file}_random_{randomization_index}"] = rand_mask_data
+
+        # Optionally, save the randomized mask data as a NIfTI file
+        rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
+        rand_mask_img.to_filename(
+            f'/Users/leni/Documents/Master/Data/{volume_file}_random_{randomization_index}_mask.nii.gz')
+
+        # You can add a print statement here if you want to indicate each randomization
+        print(f"Randomization {randomization_index + 1} saved for {volume_file}")
+
+
+# Compute the mean for each volume for original and randomized data
 mean_non_rand_data = {volume_file: np.mean(data_array, axis=0) for volume_file, data_array in
                           non_rand_mask_data_dict.items()}
 mean_rand_data = {volume_file: np.mean(data_array, axis=0) for volume_file, data_array in
@@ -79,7 +96,7 @@ print(mean_rand_data)
 
 
 
-#-------- SPATIAL CALCULATIONS --------#
+#-------- SPATIAL CORRELATIONS --------#
 
 # Fetch desired annotation (add description, space, and density if needed for identification)
 anno = fetch_annotation(source='hesse2017')
@@ -88,24 +105,9 @@ anno = fetch_annotation(source='hesse2017')
 correlations_original = []
 correlations_rand = []
 
-# Load the resampled randomized data images outside the loop
-rand_data_imgs = {volume_file: nib.load(f'/Users/leni/Documents/Master/Data/{volume_file}_rand_mask.nii.gz')
-                        for volume_file in volume_files}
-
-# Calculate the original correlation value outside the loop
-volume_file = volume_files[0]  # Choose one volume for the original correlation value
-mean_non_rand_img = nib.load(f'/Users/leni/Documents/Master/Data/{volume_file}_non_rand_mask.nii.gz')
-data_resampled_original, anno_resampled_original = resample_images(src=mean_non_rand_img, trg=anno,
-                                                                   src_space='MNI152', trg_space='MNI152',
-                                                                   method='linear', resampling='downsample_only')
-corr_original = compare_images(data_resampled_original, anno_resampled_original, metric='pearsonr')
-correlations_original.append(corr_original)
-# List to store mean correlation values for each volume in randomized data
-mean_correlations_rand = []
-
-
+# Non rand mean  sc calculations:
 # Iterate over each volume file
-for volume_file in volume_files[1:]:
+for volume_file in volume_files[0:]:
     # Load the resampled original data image
     mean_non_rand_img = nib.load(f'/Users/leni/Documents/Master/Data/{volume_file}_non_rand_mask.nii.gz')
 
@@ -118,85 +120,49 @@ for volume_file in volume_files[1:]:
     corr_original = compare_images(data_resampled_original, anno_resampled_original, metric='pearsonr')
 
     # Append the same correlation value for the original data to the list
-    correlations_original.extend([corr_original] * num_randomizations)
+    correlations_original.extend([corr_original])
 
     # Optionally, print or use the correlation result as needed
     print(f"Correlation with Original Data for {volume_file}: {corr_original:.3f}")
 
-    # from list to optionally/print was commented out
-    # List to store correlation values for this volume in randomized data
-    correlations_for_volume = []
+    # Iterate over each randomized object in mean_rand_data for the current volume
+    for randomization_index in range(num_randomizations):
+        # Access the specific randomized object for the current volume
+        rand_mask_data = rand_data_arrays[f"{volume_file}_random_{randomization_index}"]
 
-    # Iterate 100 times for the randomized data
-    for _ in range(num_randomizations):
-        # Create a new randomized copy of the non_rand mask data for each iteration
-        rand_mask_data = non_rand_mask_data * np.random.choice([-1, 1], size=non_rand_mask_data.shape)
+        # Convert the randomized data to a NIfTI image (this line can be removed)
+        rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
 
         # Resample the randomized data to match the annotation space
-        rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
-        data_resampled_rand, anno_resampled_rand = resample_images(src=rand_mask_img, trg=anno,
-                                                                               src_space='MNI152', trg_space='MNI152',
-                                                                               method='linear',
-                                                                               resampling='downsample_only')
-
-        # Compare resampled randomized data with neuromaps annotation using the compare_images function
-        corr_rand = compare_images(data_resampled_rand, anno_resampled_rand, metric='pearsonr')
-
-        # Append each of the 100 correlation values for randomized data to the list
-        correlations_for_volume.append(corr_rand)
-
-        # Optionally, print or use the correlation result as needed
-        print(f"Correlation with Randomized Data for {volume_file}: {corr_rand:.3f}")
-
-    # List to store correlation values for this volume in randomized data
-    correlations_for_volume = [corr_original]
-
-    # Iterate 100 times for the randomized data
-    for _ in range(num_randomizations):
-        # Create a new randomized copy of the non_rand mask data for each iteration
-        rand_mask_data = non_rand_mask_data * np.random.choice([-1, 1], size=non_rand_mask_data.shape)
-
-        # Resample the randomized data to match the annotation space
-        rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
         data_resampled_rand, anno_resampled_rand = resample_images(src=rand_mask_img, trg=anno,
                                                                    src_space='MNI152', trg_space='MNI152',
-                                                                   method='linear',
-                                                                   resampling='downsample_only')
+                                                                   method='linear', resampling='downsample_only')
 
         # Compare resampled randomized data with neuromaps annotation using the compare_images function
         corr_rand = compare_images(data_resampled_rand, anno_resampled_rand, metric='pearsonr')
 
-        # Append each of the 100 correlation values for randomized data to the list
-        correlations_for_volume.append(corr_rand)
+        # Append the correlation value for the current randomized object to the list
+        correlations_rand.append(corr_rand)
 
         # Optionally, print or use the correlation result as needed
-        print(f"Correlation with Randomized Data for {volume_file}: {corr_rand:.3f}")
-
-    # Optionally, calculate the mean correlation value for this volume in randomized data
-    mean_corr_for_volume = np.mean(correlations_for_volume)
-
-    # Optionally, append the mean correlation value for this volume to the list
-    mean_correlations_rand.append(mean_corr_for_volume)
-
-# Now you have a list (correlations_original) with the original correlation value repeated 100 times,
-# and a list (correlations_rand) containing 100 correlation values for each volume with the Hesse2017 brain map.
+        print(
+            f"Correlation with Randomized Data for {volume_file}, Object {randomization_index + 1}: {corr_rand:.3f}")
 
 print(len(correlations_original))
 print(len(correlations_rand))
 
 
 
-#-------- PLOTTING --------#
+#-------- SCATTER PLOT --------#
 
 # Define volume_labels
 volume_labels_original = [f"Volume {i + 1}" for i in range(len(correlations_original))]
 
-# Repeat each volume label for the number of randomizations
+# Same volume labels for the randomized data
 volume_labels_rand = np.repeat(volume_labels_original, num_randomizations)
 
 # Flatten the list of lists (correlations_randomized)
-correlations_rand_flat = [value for sublist in correlations_rand for value in sublist]
-
+#correlations_rand_flat = [value for sublist in correlations_rand for value in sublist]
 
 # Plotting the correlation values
 plt.figure(figsize=(12, 6))
@@ -205,7 +171,7 @@ plt.figure(figsize=(12, 6))
 plt.scatter(volume_labels_original, correlations_original, label='Original Data', color='blue', alpha=0.7)
 
 # Plot randomized data as dots
-plt.scatter(volume_labels_rand, correlations_rand_flat, label='Randomized Data', color='orange', alpha=0.7)
+plt.scatter(volume_labels_rand, correlations_rand, label='Randomized Data', color='orange', alpha=0.7)
 
 # Adding labels and title for the scatter plot
 plt.xlabel('Volume')
@@ -221,12 +187,14 @@ plt.show()
 
 
 
+#-------- HISTOGRAM --------#
+
 # Plotting the histogram for permutation test distribution
 plt.figure(figsize=(12, 6))
 
 # Create a histogram of the original and randomized correlation values
-plt.hist([correlations_original, correlations_rand_flat], bins=30, color=['blue', 'orange'],
-         alpha=0.7, label=['Randomized Data', 'Original Data'], edgecolor='black', stacked=True)
+plt.hist([correlations_rand], bins=30, color=['blue'],
+         alpha=0.7, label=['Randomized Data'], edgecolor='black', stacked=True)
 
 # Adding a line for the original correlation value
 plt.axvline(x=correlations_original[0], color='red', linestyle='dashed', linewidth=2, label='Original Data')
@@ -241,8 +209,5 @@ plt.grid(True)
 # Display the histogram
 plt.tight_layout()
 plt.show()
-
-
-
 
 
