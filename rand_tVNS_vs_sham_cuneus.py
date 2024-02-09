@@ -9,7 +9,7 @@ from nilearn import image as nli
 import os
 import nibabel as nib
 import matplotlib.pyplot as plt
-# from tqdm import tqdm
+from tqdm import tqdm
 
 
 #-------- PREPARE DATA --------#
@@ -52,7 +52,7 @@ for volume_file in volume_files:
     # Save the non_rand mask image
     #non_rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_non_rand_mask.nii.gz')
     non_rand_mask_img.to_filename(os.path.join(data_directory, f"{volume_file}_non_rand_mask.nii.gz"))
-    print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
+    #print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
 
     # Save the randomized data array for this volume in the dictionary
     #rand_data_arrays_gm[volume_file] = rand_mask_data
@@ -77,10 +77,11 @@ corr_values_orig = []
 
 # List to store correlation values for the randomized data
 corr_values_rand = []
-
+# Loop through each annotation source with tqdm for progress bar
+for source in tqdm(annotation_sources, desc="Annotation Sources"):
 # Loop through each annotation source
-for source in annotation_sources:
-    print(f"\n----- Annotation Source: {source} -----")
+#for source in annotation_sources:
+#    print(f"\n----- Annotation Source: {source} -----")
 
     # Fetch desired annotation
     anno = fetch_annotation(source=source)
@@ -128,7 +129,7 @@ for source in annotation_sources:
             nib.save(randomized_img, randomized_file_path)
 
             # Print a message indicating the randomization for each key
-            print(f"Randomized data for key: {key}")
+            #print(f"Randomized data for key: {key}")
 
         # List all randomized NIfTI files
         rand_files = [f for f in os.listdir(data_directory) if f.startswith('randomized_') and f.endswith('.nii.gz')]
