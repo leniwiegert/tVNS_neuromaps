@@ -67,6 +67,7 @@ anno = fetch_annotation(source='hesse2017')
 anno_parc = parc.fit_transform(anno, 'MNI152')
 print(anno_parc.shape)
 
+
 #-------- NULL MODELS --------#
 
 # Compare resampled original data with neuromaps annotation using the compare_images function
@@ -76,9 +77,8 @@ print(f'Correlation of the Annotation and the Mean Image: {corr_original}')
 
 # Calculate nulls for volumetric data with status bar
 
-for _ in tqdm(range(10)):
-    nulls = nulls.moran(mean_img_parc, atlas='MNI152', density='2mm', n_perm=3, seed=1234)
+for _ in tqdm(range(3)):
+    nulls = nulls.moran(mean_img_parc, atlas='MNI152', parcellation=schaefer['maps'], density='2mm', n_perm=10, seed=1234)
 print(nulls.shape)
-
 
 
