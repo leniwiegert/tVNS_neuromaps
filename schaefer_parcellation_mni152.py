@@ -76,9 +76,15 @@ corr_original = compare_images(mean_img_parc, anno_parc, metric='pearsonr')
 print(f'Correlation of the Annotation and the Mean Image: {corr_original}')
 
 # Calculate nulls for volumetric data with status bar
+n_perm = 3
+print(f'Number of permutations: {n_perm}')
+for _ in tqdm(range(n_perm)):
+    print("Running nulls.burt2018...")
+    nulls_result = nulls.burt2018(mean_img_parc, atlas='MNI152', parcellation=schaefer['maps'], density='3mm',
+                                  n_perm=n_perm, seed=1234)
+    print(nulls_result)
+    print("Nulls.burt2018 finished.")
 
-for _ in tqdm(range(3)):
-    nulls = nulls.moran(mean_img_parc, atlas='MNI152', parcellation=schaefer['maps'], density='2mm', n_perm=10, seed=1234)
-print(nulls.shape)
+
 
 

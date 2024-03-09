@@ -1,5 +1,6 @@
 # Author: Lena Wiegert
 
+import os
 import numpy as np
 import nibabel as nib
 import matplotlib.pyplot as plt
@@ -16,10 +17,12 @@ from neuromaps import stats
 from neuromaps import datasets, images, nulls
 from neuromaps.stats import compare_images
 
+# Define universal data directory
+data_directory = '/home/leni/Documents/Master/data/'
 
 #----------- LOAD AND GET TO KNOW THE DATA ----------#
 
-img = nib.load('/Users/leni/Documents/Master/Data/4D_rs_fCONF_del_taVNS_sham.nii')
+img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 
 # Check shape (x,y,z voxel dimensions + amount of volumes)
 img.shape
@@ -35,7 +38,7 @@ nib.is_proxy(img.dataobj)
 img_data_4d = img.get_fdata()
 
 # Using a pre-defined brain mask (standard example brain for mango from the NAS)
-mask_image = nib.load('/Users/leni/Documents/Master/Data/MNI152_T1_04mm_brain.nii')
+mask_image = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 mask_data_4d = mask_image.get_fdata()
 # Double Check: There is brain activity (non-zero-values) in the array.
 
@@ -46,14 +49,14 @@ for volume_index in range(img_data_4d.shape[-1]):
     # Create a new NIfTI image for the single volume
     single_volume_img = nib.Nifti1Image(single_volume, img.affine)
     # Save the single volume to a new NIfTI file
-    output_path = f'/Users/leni/Documents/Master/Data/volume_{volume_index + 1}.nii'
+    output_path = f'/home/leni/Documents/Master/data/volume_{volume_index + 1}.nii'
     nib.save(single_volume_img, output_path)
     print(f"Volume {volume_index + 1} saved to {output_path}")
 
 # Load all volumes
 volumes = []
 for i in range(1, 42):
-    filename = f'/Users/leni/Documents/Master/Data/volume_{i}.nii'
+    filename = os.path.join(data_directory, f'volume_{i}.nii')
     # Load the NIfTI file
     img = nib.load(filename)
     # Get the image data as a NumPy array
@@ -71,7 +74,7 @@ volumes_array = np.array(volumes)
 mean_img = nli.mean_img(img)
 
 # Mean image for each volume separately
-base_path = '/Users/leni/Documents/Master/Data/'
+base_path = '/home/leni/Documents/Master/data/'
 volume_files = [f'{base_path}volume_{i}.nii' for i in range(1, 42)]
 # Initialize a list to store mean images
 mean_images = []
@@ -124,7 +127,7 @@ cmap_mask_img = nib.Nifti1Image(cmap_mask_data.astype(np.float32), cluster.affin
 
 
 # Replace non-finite values with a gray matter mask
-gray_matter_mask_file = '/Users/leni/Documents/Master/Data/out_GM_p_0_15.nii'  # Provide the path to your gray matter mask
+gray_matter_mask_file = os.path.join(data_directory, 'out_GM_p_0_15.nii')
 gray_matter_mask = nib.load(gray_matter_mask_file)
 
 # Choose either mean_img for all volumes or mean_img_vol_1-41 for the desired volume
@@ -152,7 +155,7 @@ cmap_mask_img_data = combined_mask_img.get_fdata()
 # Normalize the colorbar based on your data values
 norm = Normalize(vmin=np.min(cmap_mask_img_data), vmax=np.max(cmap_mask_img_data))
 
-
+'''
 # Plotting, add background with colormap mask including gray matter
 fig, ax = plt.subplots(figsize=(8, 4))  # Adjust the figure size as needed (width, height)
 plotting.plot_roi(
@@ -169,7 +172,7 @@ plotting.plot_roi(
 )
 plt.show()
 
-
+'''
 #------------ SPATIAL CORRELATIONS WITH THE MEAN IMAGE ------------#
 
 # Test for mean_img_data and an example neuromaps annotation (here: NE receptor map hesse 2017)
@@ -318,6 +321,8 @@ plt.xlabel('Volume Index')
 plt.ylabel('Correlation Coefficient')
 plt.grid(True)
 plt.show()
+
+
 
 
 

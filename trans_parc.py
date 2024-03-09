@@ -1,5 +1,5 @@
-import os
 
+import os
 import neuromaps.nulls
 import numpy as np
 import nibabel as nib
@@ -51,11 +51,11 @@ mean_img_data = mean_img_gm.get_fdata()
 from neuromaps import transforms, images
 
 # Transform MNI152 to fsLR (surface based data) with the density we want it in
-mean_img_fsav = transforms.mni152_to_fsaverage(mean_img_gm, '41k')
+mean_img_fsav = transforms.mni152_to_fsaverage(mean_img_gm, '10k')
 print(mean_img_fsav)
 # The output is a tuple of Gifti Images
 
-# Compare shapes of volumetric vs. fsLR data
+# Compare shapes of volumetric vs. fsLR/fsaverage data
 print(mean_img_data.shape)
 # (97, 115, 97)
 print(images.load_data(mean_img_fsav).shape)
@@ -65,37 +65,56 @@ print(mean_img_fsav_lh.agg_data().shape)
 # (163842,)
 
 
+# Check attributes of the left hemisphere image
+print("Left Hemisphere Gifti Image:")
+for array in mean_img_fsav_lh.darrays:
+    print(array.data)
+
+# Check attributes of the right hemisphere image
+print("Right Hemisphere Gifti Image:")
+for array in mean_img_fsav_rh.darrays:
+    print(array.data)
+
+
+# this part makes total sense, for fsLR and for fsaverage
+# BUT: i need to make sure that mean_img_fsav correctly represents both hemispheres!
+# it does :)
+
 #-------- PARCELLATION --------#
+
+from nilearn.surface import vol_to_surf
 
 from nilearn.datasets import fetch_atlas_schaefer_2018
 
 # Download atlas
 schaefer = fetch_atlas_schaefer_2018(n_rois=400)
 
-# Show list of brain regions
-print(schaefer)
-
 # File path to the parcellation file
-print(schaefer['maps'])
+print('Path to annotation file:', schaefer['maps'])
 
-# Find these functions for nilearn!
-# Convert annotation file to gifti images
-schaefer_gii = annot_to_gifti(schaefer)
-# Label left and right hemisphere files correctly (e.g. lh: 1-500, rh: 500-1000, not both 1-500)
-schaefer_gii = relabel_gifti(schaefer)
+# Load the annotation file
+schaefer_path = '/home/leni/nilearn_data/schaefer_2018/Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1mm.nii.gz'
+schaefer_img = nib.load(schaefer_path)
 
-# Create parcellater
-parcellater = Parcellater(schaefer['maps'], 'MNI152')
+# Convert the annotation file to gifti images
+schaefer_gii = vol_to_surf(schaefer_img, mean_img_fsav_lh)
+
+# Print information about the output gifti images
+print(schaefer_gii)
+
+schaefer['maps'], 'fsaverage', hemi='L')
+# Path to parcellation image + space in which schaefer is defined (MNI152 and fsaverage)
 
 # Parcellate non-transformed data
-mean_img_parc = parcellater.fit_transform(mean_img, 'MNI152')
-print(mean_img_parc.shape)
+#mean_img_parc = parcellater.fit_transform(mean_img, 'MNI152')
+#print(mean_img_parc.shape)
 # Should be (1,400)
 # You now have the volumetric brain image parcellated in 400 rois
 
 # Parcellate transformed data
-mean_img_fsav_parc = parcellater.fit_transform(mean_img_fsav, 'fsaverage')
+mean_img_fsav_parc = parcellater.fit_transform(mean_img_fsav_lh, 'fsaverage', hemi='L')
 print(mean_img_fsav_parc.shape)
+
 
 '''
 #--------- SPATIAL NULL MODELS --------#
@@ -120,5 +139,7 @@ hesse2017 = datasets.fetch_annotation(source='hesse2017')
 
 #neuromaps.nulls.hungarian(mean_img_parc, atlas='fsaverage', density='10k', parcellation=schaefer['maps'], n_perm=10)
 
-
 '''
+
+
+
