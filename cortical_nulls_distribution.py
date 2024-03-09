@@ -153,6 +153,21 @@ ding2010_fslr_parc = parc_fsLR.fit_transform(ding2010_fslr, 'fsLR')
 
 ################## CORRECTED VERSION ####################
 
+# Mapping of annotation sources to categories
+category_mapping = {
+    'ding2010': 'NE',
+    'hesse2017': 'NE',
+    'kaller2017': 'D1',
+    'alarkurtti2015': 'D2/D3',
+    'jaworska2020': 'D2/D3',
+    'sandiego2015': 'D2/D3',
+    'smith2017': 'D2/D3',
+    'sasaki2012': 'DAT',
+    'fazio2016': '5-HTT',
+    'gallezot2010': '5-HTb',
+    'radnakrishnan2018': '5-HT6'
+}
+
 #--------- LOOP FOR SC FOR MEAN IMAGE WITH 11 MAPS ---------#
 
 # List of annotation sources
@@ -161,6 +176,12 @@ ding2010_fslr_parc = parc_fsLR.fit_transform(ding2010_fslr, 'fsLR')
 annotation_sources = ['ding2010', 'hesse2017', 'kaller2017', 'alarkurtti2015', 'jaworska2020', 'sandiego2015',
                       'smith2017', 'sasaki2012', 'fazio2016', 'gallezot2010', 'radnakrishnan2018']
 
+# Manually define colors for each histogram
+hist_colors = ['blue', 'blue', 'olive', 'green', 'green', 'green', 'green', 'cyan', 'red', 'orange', 'yellow']
+
+# Create list for saving the r-value, the p-value and the nulls for each correlation
+corr_vals_mean_list = []
+pval_mean_list = []
 corr_nulls_mean_list = []
 
 # Define the number of columns you want
@@ -173,9 +194,9 @@ num_rows = -(-len(annotation_sources) // num_columns)  # Ceiling division to ens
 #fig, axs = plt.subplots(len(annotation_sources), figsize=(12, 6), sharex=False, sharey=False)
 fig, axs = plt.subplots(num_rows, num_columns, figsize=(12, 12), sharex=False, sharey=False)
 
-colors = [(0, 0, 0.5, 0.1), (0, 0, 0.5, 0.5), (0, 0, 0.5, 0.9)]
-cmap_name = 'blues'
-cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=10)
+#colors = [(0, 0, 0.5, 0.1), (0, 0, 0.5, 0.5), (0, 0, 0.5, 0.9)]
+#cmap_name = 'blues'
+#cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=10)
 
 for i, source in enumerate(annotation_sources):
     row = i // num_columns
@@ -192,16 +213,19 @@ for i, source in enumerate(annotation_sources):
     annotation_fslr_parc = parc_fsLR.fit_transform(annotation_fslr, 'fsLR')
 
     # Calculate spatial correlation
-    corr_nulls_mean = stats.compare_images(mean_img_fslr_parc, annotation_fslr_parc, metric='pearsonr', ignore_zero=True,
+    corr_val_mean, pval_mean, corr_nulls_mean = stats.compare_images(mean_img_fslr_parc, annotation_fslr_parc, metric='pearsonr', ignore_zero=True,
                                            nulls=nulls_mean, nan_policy='omit', return_nulls=True)
 
-    # Append to list
+    # Append to lists
+    corr_vals_mean_list.append(corr_val_mean)
+    pval_mean_list.append(pval_mean)
     corr_nulls_mean_list.append(corr_nulls_mean)
 
-    print(f'Correlation value for annotation ({source}) and nulls of the mean image: {corr_nulls_mean}')
+    #print("r-Value:", corr_val_mean)
+    #print("p-Value:", pval_mean)
+    #print("Nulls:", corr_nulls_mean)
 
-    # Calculate 95% confidence interval
-    #q5, q95 = np.percentile(np.array(corr_nulls_mean).flatten(), [5, 95])
+    #print(f'Correlation value for annotation ({source}) and nulls of the mean image: {corr_nulls_mean}')
 
     # Determine the correct subplot to use
     if num_rows == 1:
@@ -210,14 +234,15 @@ for i, source in enumerate(annotation_sources):
         subplot_ax = axs[row, col]
 
     # Create a histogram for the current map
-    sns.histplot(data=corr_nulls_mean, color=cm(i / len(annotation_sources)), edgecolor='black', kde=True,
+    sns.histplot(data=corr_nulls_mean, color=hist_colors[i], edgecolor='black', kde=True,
                  ax=subplot_ax, legend=False)
+    # color=cm(i / len(annotation_sources))
 
-    # Calculate 95% confidence interval for each array in corr_nulls_mean
-    for arr in corr_nulls_mean:
-        q5, q95 = np.percentile(np.array(arr).flatten(), [5, 95])
-        subplot_ax.axvline(q5, color='black', linestyle='dashed', linewidth=2, label='5% Quantile')
-        subplot_ax.axvline(q95, color='black', linestyle='dashed', linewidth=2, label='95% Quantile')
+   # Calculate 95% confidence interval for each array in corr_nulls_mean
+#    for arr in corr_nulls_mean:
+#        q5, q95 = np.percentile(np.array(arr).flatten(), [5, 95])
+#        subplot_ax.axvline(q5, color='black', linestyle='dashed', linewidth=2, label='5% Quantile')
+#        subplot_ax.axvline(q95, color='black', linestyle='dashed', linewidth=2, label='95% Quantile')
 
     # Plot 95% confidence interval
     #subplot_ax.axvline(q5, color='black', linestyle='dashed', linewidth=2, label='5%')
@@ -225,7 +250,14 @@ for i, source in enumerate(annotation_sources):
     #subplot_ax.axvline(q5, color='black', linestyle='dashed', linewidth=2, label='5% Quantile')
     #subplot_ax.axvline(q95, color='black', linestyle='dashed', linewidth=2, label='95% Quantile')
 
-    subplot_ax.set_xlabel('Spatial Correlation')
+    # Plot vertical line for the similarity value
+    subplot_ax.axvline(corr_val_mean, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
+
+    # Add p-value as text annotation in the top right part of each histogram
+    subplot_ax.text(0.95, 0.95, f'p = {pval_mean:.3f}', transform=subplot_ax.transAxes, ha='right', va='top',
+                    bbox=dict(facecolor='white', alpha=0.5))
+
+    subplot_ax.set_xlabel('Spatial Nulls')
     subplot_ax.set_ylabel('Frequency')
     subplot_ax.set_title(source)
 
@@ -236,12 +268,28 @@ for i in range(len(annotation_sources), num_rows * num_columns):
 # Set the limits of the x and y axes manually
 #axs[i].axis([0, 1, 0, 1])
 plt.subplots_adjust(wspace=0.3, hspace=3) # adds twice the default space between the plots
+
+# Add custom legend for the colors
+unique_colors = list(set(hist_colors))  # Get unique colors
+legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
+
+# Create legend handles and labels
+legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
+                  for color, label in zip(unique_colors, legend_labels)]
+
+# Add legend with handles and labels
+#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
+
+
+# Add custom legend for the similarity value
+handles, labels = axs[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='upper right')
 #plt.tight_layout()
 plt.show()
 
-# check max min vals
+# color legend
+# confidence interval?
 ##############################################################################
-
 
 
 
