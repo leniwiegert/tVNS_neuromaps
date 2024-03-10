@@ -108,7 +108,7 @@ mean_img_fslr_parc = parc_fsLR.fit_transform(mean_img_fslr, 'fsLR')
 
 # Generate nulls
 # Only once before the loop
-nulls_mean = alexander_bloch(mean_img_fslr_parc, atlas='fsLR', density='32k', parcellation=parcels_fslr_32k)
+nulls_mean = alexander_bloch(mean_img_fslr_parc, atlas='fsLR', density='32k', parcellation=parcels_fslr_32k, n_perm=1000)
 print(f'These are the Nulls for the Mean Image: {nulls_mean}')
 print(len(nulls_mean))
 # Should be a ndarray with shape 400(, 1000)
@@ -124,30 +124,6 @@ ding2010_fslr = transforms.mni152_to_fslr(ding2010, '32k')
 # The annotation and your data is now both fsLR 32k
 # Parcellate annotation
 ding2010_fslr_parc = parc_fsLR.fit_transform(ding2010_fslr, 'fsLR')
-
-
-# Calculate spatial correlation and p-value
-# WRONG COMMAND
-#corr_mean, pval_mean = stats.compare_images(mean_img_fslr_parc, ding2010_fslr_parc, nulls=nulls_mean)
-#print(f"Correlation for neuromaps annotation and mean image: {corr_mean[0]}")
-#print(f"p-value for annotation and mean image: {corr_mean[1]}")
-#print(f'Correlation value for annotation and mean image: {corr_mean}')
-#print(f'P-value for annotation and mean image: {pval_mean}')
-
-# CORRECT COMMAND
-# pval as well?
-#corr_nulls_mean = stats.compare_images(mean_img_fslr_parc, ding2010_fslr_parc, metric='pearsonr', ignore_zero=True, nulls=nulls_mean, nan_policy='omit', return_nulls=True)
-#print(f'Here are the Nulls for the Mean Image with the Annotation:{corr_nulls_mean}')
-#print(corr_nulls_mean)
-
-
-#-------- Histogram plotting -------#
-
-# TEST
-# Create a histogram for the current map
-#plt.hist(corr_nulls_mean, edgecolor='black')#ax.axvline(q5, color='black', linestyle='dashed', linewidth=2, label='5% Quantile')
-#ax.axvline(q95, color='black', linestyle='dashed', linewidth=2, label='95% Quantile')
-#plt.show()
 
 
 
