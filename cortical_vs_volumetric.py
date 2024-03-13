@@ -21,7 +21,8 @@ from nilearn import datasets, input_data, surface
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 from netneurotools.datasets import fetch_schaefer2018
-from neuromaps import transforms, stats
+from neuromaps import transforms
+from neuromaps.stats import compare_images
 from neuromaps.nulls import alexander_bloch
 from neuromaps.parcellate import Parcellater
 from neuromaps.datasets import fetch_annotation
@@ -97,7 +98,11 @@ parc_fsLR = Parcellater(parcels_fslr_32k, 'fslr', resampling_target=None)
 
 # Transform my image to fsLR
 mean_img_fslr = transforms.mni152_to_fslr(mean_img_gm, '32k', method='nearest')
-print(mean_img_fslr)
+#print(mean_img_fslr)
+# Saving mean_img_fslr, which is a tuple of Gifti images
+nib.save(mean_img_fslr[0], os.path.join(data_directory, 'mean_img_fslr_LH.gii'))  # Save left hemisphere
+nib.save(mean_img_fslr[1], os.path.join(data_directory, 'mean_img_fslr_RH.gii'))  # Save right hemisphere
+
 # The output is a tuple of Gifti Images
 
 # Parcellate my image
@@ -151,10 +156,85 @@ atlas_data = atlas_nii.get_fdata()
 
 # Extract numerical data from NIfTI images
 mean_img_gm_data = mean_img_gm.get_fdata()
+
+# Split the volumetric mean image into left and right hemispheres
+mean_img_gm_LH = mean_img_gm_data[:, :, :mean_img_gm_data.shape[2] // 2]
+mean_img_gm_RH = mean_img_gm_data[:, :, mean_img_gm_data.shape[2] // 2:]
+
+# Save the left and right hemisphere images
+nib.save(nib.Nifti1Image(mean_img_gm_LH, mean_img_gm.affine), os.path.join(data_directory, 'mean_img_gm_LH.nii'))
+nib.save(nib.Nifti1Image(mean_img_gm_RH, mean_img_gm.affine), os.path.join(data_directory, 'mean_img_gm_RH.nii'))
+
 #mean_img_fslr_data = mean_img_fslr.get_fdata()
 
-mean_img_gm_parc = atlas_data[mean_img_gm_data.astype(int)]
+#mean_img_gm_parc = atlas_data[mean_img_gm_data.astype(int)]
+#mean_img_fslr_parc = atlas_data[mean_img_fslr.astype(int)]
 
+# Load gifti files
+atlas_file1 = os.path.join(data_directory, 'mean_img_fslr_LH.gii')
+atlas_file2 = os.path.join(data_directory, 'mean_img_fslr_RH.gii')
+
+# Load the atlas data from the gifti files
+mean_img_fslr_LH = nib.load(atlas_file1).agg_data()
+mean_img_fslr_RH = nib.load(atlas_file2).agg_data()
+
+'''parcellated_data = []
+for gifti_image in [atlas_file1, atlas_file2]:
+    gifti_data = nib.load(gifti_image).darrays[0].data
+    parcellated_data.append(atlas_data[gifti_data.astype(int)])'''
+
+tian_atlas = nib.load(mskFile)
+tian_atlas_data = tian_atlas.get_fdata()
+
+# Define a masker using the Tian atlas
+def tian_masker(img_data):
+    # Get unique non-zero values from the Tian atlas data
+    labels = np.unique(tian_atlas_data)[1:]
+    # Iterate over each label and create a mask for it
+    masks = [img_data == label for label in labels]
+    # Stack the masks along the last dimension
+    mask = np.stack(masks, axis=-1)
+    return mask
+
+# Parcellate volumetric data
+cortical_LH_parc_data = tian_masker(mean_img_gm_LH)
+cortical_RH_parc_data = tian_masker(mean_img_gm_RH)
+print(cortical_RH_parc_data.shape)
+
+subcortical_LH_parc_data = tian_masker(mean_img_fslr_LH)
+subcortical_RH_parc_data = tian_masker(mean_img_fslr_RH)
+print(subcortical_RH_parc_data.shape)
+
+# Convert boolean arrays to integer or float arrays
+cortical_LH_parc_data = cortical_LH_parc_data.astype(np.float32)  # Convert to float32
+cortical_RH_parc_data = cortical_RH_parc_data.astype(np.float32)  # Convert to float32
+subcortical_LH_parc_data = subcortical_LH_parc_data.astype(np.float32)  # Convert to float32
+subcortical_RH_parc_data = subcortical_RH_parc_data.astype(np.float32)  # Convert to float32
+
+# Create NIfTI image objects
+cortical_LH_img = nib.Nifti1Image(cortical_LH_parc_data, affine=None)
+cortical_RH_img = nib.Nifti1Image(cortical_RH_parc_data, affine=None)
+subcortical_LH_img = nib.Nifti1Image(subcortical_LH_parc_data, affine=None)
+subcortical_RH_img = nib.Nifti1Image(subcortical_RH_parc_data, affine=None)
+
+# Calculate Pearson correlation coefficient between cortical data and left hemisphere
+#correlation_coefficient_LH, p_value_LH = pearsonr(subcortical_LH_parc_data_res, cortical_LH_parc_data)
+corr = compare_images(subcortical_LH_img, cortical_LH_img, metric='pearsonr')
+# numpy.exceptions.AxisError: axis 3 is out of bounds for array of dimension 3
+
+# Calculate Pearson correlation coefficient between cortical data and right hemisphere
+#correlation_coefficient_RH, p_value_RH = pearsonr(subcortical_RH_parc_data, cortical_RH_parc_data)
+# ValueError: x and y must have the same length.
+
+'''
+print("Left Hemisphere Pearson correlation coefficient:", correlation_coefficient_LH)
+print("Left Hemisphere p-value:", p_value_LH)
+
+print("Right Hemisphere Pearson correlation coefficient:", correlation_coefficient_RH)
+print("Right Hemisphere p-value:", p_value_RH)
+'''
+
+# Probleme mit den Shapes
 
 
 
