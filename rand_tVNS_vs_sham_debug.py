@@ -2,6 +2,9 @@
 # Permutation of the tVNS effect
 
 import numpy as np
+import pandas as pd
+import seaborn as sns
+from neuromaps import transforms
 from neuromaps.datasets import fetch_annotation
 from neuromaps.resampling import resample_images
 from neuromaps.stats import compare_images
@@ -153,6 +156,89 @@ print(len(correlations_rand))
 
 
 
+#################
+#OPTIMIZED PLOTTING
+
+annotation_sources = ['ding2010', 'hesse2017', 'kaller2017', 'alarkurtti2015', 'jaworska2020', 'sandiego2015',
+                      'smith2017', 'sasaki2012', 'fazio2016', 'gallezot2010', 'radnakrishnan2018']
+
+# Single heatmaps
+# Calculate the number of rows and columns for the subplot grid
+num_maps = len(annotation_sources)
+num_cols = 3  # Number of columns in the grid
+num_rows = (num_maps + num_cols - 1) // num_cols  # Calculate the number of rows needed
+
+# Create a new figure with the appropriate size
+fig, axes = plt.subplots(num_rows, num_cols, figsize=(16, 8 * num_rows))
+
+# Loop through each brain map and corresponding axis in the grid
+for idx, source in enumerate(annotation_sources):
+    row_idx = idx // num_cols
+    col_idx = idx % num_cols
+    ax = axes[row_idx, col_idx]  # Get the axis corresponding to the current brain map
+
+    # Fetch annotation
+    anno = fetch_annotation(source=source)
+
+    # Initialize correlation values list
+    corr_values_single = []
+    p_values_single = []
+    volume_numbers = []  # List to store volume numbers
+
+    # Create a DataFrame for correlation values for the current brain map
+    df_corr_single = pd.DataFrame({'Randomized': correlations_rand})
+
+    #df_p_values_single = pd.DataFrame({'p-Values':p_values_single})
+
+    # Sort correlation values from lowest to highest
+    df_corr_single_sorted = df_corr_single.sort_values(by='Correlation Values')
+
+    # Sort p-values based on the sorted correlation values
+    #df_p_values_single_sorted = df_p_values_single.loc[df_corr_single_sorted.index]
+
+    # Plot the heatmap of sorted correlation values for the current brain map
+    sns.heatmap(df_corr_single_sorted.transpose(), annot=False, fmt='.2f', cmap='coolwarm', cbar=True, center=0.05,
+                ax=ax)
+    ax.set_title(f'Correlation Values for {source}')
+    ax.set_xlabel('Volume Number')
+    if col_idx == 0:  # Add y-axis label only for the first column
+        ax.set_ylabel('Correlation Value')
+    else:
+        ax.set_ylabel('')  # Remove y-axis label for other columns
+
+    # Loop through each cell and add the p-value as annotation text if it's significant
+    #for i in range(df_corr_single.shape[0]):
+    #    if p_values_single[i] <= 0.05:
+    #        ax.text(i + 0.5, 0.5, '*', ha='center', va='center', color='black', fontsize=10)
+
+    #for i in range(df_p_values_single_sorted.shape[0]):
+    #    if (df_p_values_single_sorted.iloc[i] <= 0.05).any():
+    #        ax.text(i + 0.5, 0.5, '*', ha='center', va='center', color='black', fontsize=10)
+
+    # Rotate x-axis ticks
+    ax.tick_params(axis='x', rotation=45, labelsize=5)
+
+    # Set x-ticks and corresponding labels for each volume
+    ax.set_xticks(np.arange(len(df_corr_single)))
+    ax.set_xticklabels(volume_numbers)  # Set volume numbers as xticklabels
+
+    # Clear volume_numbers for the next brain map
+    volume_numbers = []
+
+# Remove empty subplots
+for i in range(num_maps, num_cols * num_rows):
+    fig.delaxes(axes.flatten()[i])
+
+# Adjust layout to prevent overlapping and increase space between rows
+plt.tight_layout(pad=12.0)  # 3.0
+
+# Save the plot as an image
+plt.savefig('heatmap_combined.png')
+
+# Show the plot
+plt.show()
+
+'''
 #-------- SCATTER PLOT --------#
 
 # Define volume_labels
@@ -211,3 +297,4 @@ plt.tight_layout()
 plt.show()
 
 
+'''

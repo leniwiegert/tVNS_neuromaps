@@ -29,7 +29,7 @@ print(os.environ['PATH'])
 #-------- LOAD AND PREP DATA --------#
 
 # Define universal data directory
-data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 
@@ -254,6 +254,13 @@ for source in annotation_sources:
     # Initialize correlation values list
     corr_values_single = []
     p_values_single = []
+    volume_numbers = []  # List to store volume numbers
+
+    # Process each volume
+    for i in range(1, 42):
+        volume_path = os.path.join(data_directory, f'volume_{i}.nii')
+        volume = nib.load(volume_path)
+        volume_numbers.append(i)  # Store the volume number
 
     # Process each volume
     for i in range(1, 42):
@@ -305,10 +312,11 @@ print("Here are the spatial correlations for all annotations:")
 print(np.array(all_corr_values_single).shape)
 
 
-#--------- SC + P-VALUE PLOTTING OF SINGLE SUBECT DATA ---------#
 
-# Call it for plotting
-data_before_plotting = pd.read_pickle(os.path.join(data_directory, 'data_before_plotting.pkl'))
+
+'''
+# One big heatmap
+#--------- SC + P-VALUE PLOTTING OF SINGLE SUBJECT DATA ---------#
 
 # Create a new array with the p-values only
 p_values_only = np.array(all_p_values_single)
@@ -318,10 +326,31 @@ p_values_only[p_values_only > 0.05] = np.nan
 
 
 # Create a DataFrame for correlation values
-df_corr = pd.DataFrame(all_corr_values_single.T, columns=np.arange(1, 42), index=annotation_sources)
+df_corr = pd.DataFrame(all_corr_values_single, columns=np.arange(1, 42), index=annotation_sources)
 
 # Create a DataFrame for correlation values
-df_p_values = pd.DataFrame(all_p_values_single.T, columns=np.arange(1, 42), index=annotation_sources)
+df_p_values = pd.DataFrame(all_p_values_single, columns=np.arange(1, 42), index=annotation_sources)
+
+# Transpose the DataFrame for correlation values
+df_corr_transposed = df_corr.transpose()
+
+# Transpose the DataFrame for p-values
+df_p_values_transposed = df_p_values.transpose()
+
+# Initialize the figure
+plt.figure(figsize=(12, 6))
+
+# Plot the heatmap of correlation values
+plt.subplot(1, 2, 1)
+sns.heatmap(df_corr_transposed, annot=False, fmt='.2f', cmap='coolwarm', cbar=False, center=0.05)
+
+# Loop through each cell and add the p-value as annotation text if it's significant
+for i in range(df_p_values_transposed.shape[0]):
+    for j in range(df_p_values_transposed.shape[1]):
+        if df_p_values_transposed.iloc[i, j] <= 0.05:
+            plt.text(j + 0.5, i + 0.5, f'{df_p_values_transposed.iloc[i, j]:.3f}',
+                     ha='center', va='center', color='black', fontsize=7)
+
 
 # Initialize the figure
 plt.figure(figsize=(12, 6))
@@ -333,9 +362,245 @@ sns.heatmap(df_corr, annot=False, fmt='.2f', cmap='coolwarm', cbar=False, center
 # Loop through each cell and add the p-value as annotation text if it's significant
 for i in range(df_p_values.shape[0]):
     for j in range(df_p_values.shape[1]):
-        if df_p_values.iloc[i, j] <= 0.05:
+        if df_p_values.iloc[i, j] <= 0.05:''''''
             plt.text(j + 0.5, i + 0.5, f'{df_p_values.iloc[i, j]:.3f}',
                      ha='center', va='center', color='black', fontsize=7)
 
 plt.title('Correlation Values with Significant P-Values')
 plt.show()
+'''
+
+
+'''
+# Single heatmaps
+# Calculate the number of rows and columns for the subplot grid
+num_maps = len(annotation_sources)
+num_cols = 3  # Number of columns in the grid
+num_rows = (num_maps + num_cols - 1) // num_cols  # Calculate the number of rows needed
+
+# Create a new figure with the appropriate size
+fig, axes = plt.subplots(num_rows, num_cols, figsize=(16, 8 * num_rows))
+
+# Loop through each brain map and corresponding axis in the grid
+for idx, source in enumerate(annotation_sources):
+    row_idx = idx // num_cols
+    col_idx = idx % num_cols
+    ax = axes[row_idx, col_idx]  # Get the axis corresponding to the current brain map
+
+    # Fetch annotation
+    anno = fetch_annotation(source=source)
+
+    # Initialize correlation values list
+    corr_values_single = []
+    p_values_single = []
+    volume_numbers = []  # List to store volume numbers
+
+    # Process each volume
+    for i in range(1, 42):
+        volume_path = os.path.join(data_directory, f'volume_{i}.nii')
+        volume = nib.load(volume_path)
+        # Resample and add GM mask
+        gray_matter_mask_resampled = nli.resample_to_img(gray_matter_mask, volume)
+        # Create a new mask by keeping only non-NaN values in both masks
+        vol_gm_data = np.where(np.isnan(volume.get_fdata()), gray_matter_mask_resampled.get_fdata(), volume.get_fdata())
+        # Create a new image with the new mask
+        vol_gm = nib.Nifti1Image(vol_gm_data.astype(np.float32), volume.affine)
+
+        # Transform the single volumes to fsLR
+        vol_fslr = transforms.mni152_to_fslr(vol_gm, '32k')
+        # Parcellate the single volumes
+        vol_fslr_parc = parc_fsLR.fit_transform(vol_fslr, 'fsLR')
+
+        # Transform annotation to fsLR
+        anno_fslr = transforms.mni152_to_fslr(anno, '32k')
+        # Parcellate annotation
+        anno_fslr_parc = parc_fsLR.fit_transform(anno_fslr, 'fsLR')
+
+        # Calculate spatial correlations
+        corr, pval = stats.compare_images(vol_fslr_parc, anno_fslr_parc, nulls=nulls_single)
+        corr_values_single.append(corr)
+        p_values_single.append(pval)
+
+        volume_numbers.append(i)  # Store the volume number
+
+        print(f"Processing {volume_path}")
+        print(f'r = {corr:.3f}')
+        print("\n")
+
+    # Create a DataFrame for correlation values for the current brain map
+    df_corr_single = pd.DataFrame({'Correlation Values': corr_values_single})
+
+    df_p_values_single = pd.DataFrame({'p-Values':p_values_single})
+
+    # Sort correlation values from lowest to highest
+    df_corr_single_sorted = df_corr_single.sort_values(by='Correlation Values')
+
+    # Sort p-values based on the sorted correlation values
+    df_p_values_single_sorted = df_p_values_single.loc[df_corr_single_sorted.index]
+
+    # Plot the heatmap of sorted correlation values for the current brain map
+    sns.heatmap(df_corr_single_sorted.transpose(), annot=False, fmt='.2f', cmap='coolwarm', cbar=True, center=0.05,
+                ax=ax)
+    ax.set_title(f'Correlation Values with Significant P-Values for {source}')
+    ax.set_xlabel('Volume Number')
+    if col_idx == 0:  # Add y-axis label only for the first column
+        ax.set_ylabel('Correlation Value')
+    else:
+        ax.set_ylabel('')  # Remove y-axis label for other columns
+
+    # Loop through each cell and add the p-value as annotation text if it's significant
+    #for i in range(df_corr_single.shape[0]):
+    #    if p_values_single[i] <= 0.05:
+    #        ax.text(i + 0.5, 0.5, '*', ha='center', va='center', color='black', fontsize=10)
+
+    for i in range(df_p_values_single_sorted.shape[0]):
+        if (df_p_values_single_sorted.iloc[i] <= 0.05).any():
+            ax.text(i + 0.5, 0.5, '*', ha='center', va='center', color='black', fontsize=10)
+
+    # Rotate x-axis ticks
+    ax.tick_params(axis='x', rotation=45, labelsize=5)
+
+    # Set x-ticks and corresponding labels for each volume
+    ax.set_xticks(np.arange(len(df_corr_single)))
+    ax.set_xticklabels(volume_numbers)  # Set volume numbers as xticklabels
+
+    # Clear volume_numbers for the next brain map
+    volume_numbers = []
+
+# Remove empty subplots
+for i in range(num_maps, num_cols * num_rows):
+    fig.delaxes(axes.flatten()[i])
+
+# Adjust layout to prevent overlapping and increase space between rows
+plt.tight_layout(pad=12.0)  # 3.0
+
+# Save the plot as an image
+plt.savefig('heatmap_combined.png')
+
+# Show the plot
+plt.show()
+'''
+
+
+# Calculate the number of rows and columns for the subplot grid
+num_maps = len(annotation_sources)
+num_cols = 3  # Number of columns in the grid
+num_rows = (num_maps + num_cols - 1) // num_cols  # Calculate the number of rows needed
+
+# Create a new figure with the appropriate size
+fig, axes = plt.subplots(num_rows, num_cols, figsize=(16, 8 * num_rows))
+
+corr_values_all = []
+
+# Loop through each brain map and corresponding axis in the grid
+for idx, source in enumerate(annotation_sources):
+    row_idx = idx // num_cols
+    col_idx = idx % num_cols
+    ax = axes[row_idx, col_idx]  # Get the axis corresponding to the current brain map
+
+    # Fetch annotation
+    anno = fetch_annotation(source=source)
+    # Initialize correlation values list
+    corr_values_single = []
+    p_values_single = []
+    volume_numbers = []  # List to store volume numbers
+
+    # Process each volume
+    for i in range(1, 42):
+        volume_path = os.path.join(data_directory, f'volume_{i}.nii')
+        volume = nib.load(volume_path)
+        # Resample and add GM mask
+        gray_matter_mask_resampled = nli.resample_to_img(gray_matter_mask, volume)
+        # Create a new mask by keeping only non-NaN values in both masks
+        vol_gm_data = np.where(np.isnan(volume.get_fdata()), gray_matter_mask_resampled.get_fdata(), volume.get_fdata())
+        # Create a new image with the new mask
+        vol_gm = nib.Nifti1Image(vol_gm_data.astype(np.float32), volume.affine)
+
+        # Transform the single volumes to fsLR
+        vol_fslr = transforms.mni152_to_fslr(vol_gm, '32k')
+        # Parcellate the single volumes
+        vol_fslr_parc = parc_fsLR.fit_transform(vol_fslr, 'fsLR')
+
+        # Transform annotation to fsLR
+        anno_fslr = transforms.mni152_to_fslr(anno, '32k')
+        # Parcellate annotation
+        anno_fslr_parc = parc_fsLR.fit_transform(anno_fslr, 'fsLR')
+
+        # Calculate spatial correlations
+        corr, pval = stats.compare_images(vol_fslr_parc, anno_fslr_parc, nulls=nulls_single)
+        corr_values_single.append(corr)
+        p_values_single.append(pval)
+
+        volume_numbers.append((i, corr))  # Store the volume number and its corresponding correlation value
+
+        print(f"Processing {volume_path}")
+        print(f'r = {corr:.3f}')
+        print("\n")
+
+    corr_values_all.extend(corr_values_single)
+    # Calculate the highest and lowest total correlation values
+    min_corr = min(corr_values_all)
+    max_corr = max(corr_values_all)
+
+    # Create a DataFrame for correlation values for the current brain map
+    df_corr_single = pd.DataFrame({'Correlation Values': corr_values_single})
+
+    df_p_values_single = pd.DataFrame({'p-Values': p_values_single})
+
+    # Sort correlation values from lowest to highest
+    df_corr_single_sorted = df_corr_single.sort_values(by='Correlation Values')
+
+    # Sort p-values based on the sorted correlation values
+    df_p_values_single_sorted = df_p_values_single.loc[df_corr_single_sorted.index]
+
+    # Plot the heatmap of sorted correlation values for the current brain map
+    sns.heatmap(df_corr_single_sorted.transpose(), annot=False, fmt='.2f', cmap='coolwarm', cbar=True, center=(min_corr + max_corr) / 2,
+                ax=ax, vmin=min_corr, vmax=max_corr)
+    ax.set_title(f'{source}')
+    ax.set_xlabel('Volume Number')
+    if col_idx == 0:  # Add y-axis label only for the first column
+        ax.set_ylabel('Correlation Value')
+    else:
+        ax.set_ylabel('')  # Remove y-axis label for other columns
+
+    # Loop through each cell and add the p-value as annotation text if it's significant
+    #for i in range(df_corr_single.shape[0]):
+    #    if p_values_single[i] <= 0.05:
+    #        ax.text(i + 0.5, 0.5, '*', ha='center', va='center', color='black', fontsize=10)
+
+    for i in range(df_p_values_single_sorted.shape[0]):
+        if (df_p_values_single_sorted.iloc[i] <= 0.05).any():
+            ax.text(i + 0.5, 0.5, '*', ha='center', va='center', color='black', fontsize=10)
+
+    # Rotate x-axis ticks
+    ax.tick_params(axis='x', rotation=45, labelsize=6)
+
+    # Sort volume numbers based on the correlation values
+    volume_numbers_sorted = sorted(volume_numbers, key=lambda x: x[1])
+
+    # Extract only the sorted volume numbers
+    sorted_volume_numbers = [volume[0] for volume in volume_numbers_sorted]
+
+    # Set x-ticks and corresponding labels for each volume
+    ax.set_xticks(np.arange(len(df_corr_single)))
+    ax.set_xticklabels(sorted_volume_numbers[:len(df_corr_single)])  # Set sorted volume numbers as xticklabels
+
+    # Extend the list with correlation values for the current brain map
+    corr_values_all.extend(corr_values_single)
+
+# Remove empty subplots
+for i in range(num_maps, num_cols * num_rows):
+    fig.delaxes(axes.flatten()[i])
+
+# Adjust layout to prevent overlapping and increase space between rows
+plt.tight_layout(pad=12.0)  # 3.0
+
+plt.suptitle('Bootstrapped correlations of tVNS-induced changes in rs-FC and receptor maps (single subject level)', fontsize=20, fontweight='bold', y=1.1)
+# Save the plot as an image
+plt.savefig('heatmap_combined.png')
+
+# Show the plot
+plt.show()
+
+
+

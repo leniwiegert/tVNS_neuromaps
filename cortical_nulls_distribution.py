@@ -263,8 +263,7 @@ fig.legend(handles, labels, loc='upper right')
 #plt.tight_layout()
 plt.show()
 
-# color legend
-# confidence interval?
+
 ##############################################################################
 
 

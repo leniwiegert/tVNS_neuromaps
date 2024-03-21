@@ -26,7 +26,7 @@ print(os.environ['PATH'])
 #-------- LOAD AND PREP DATA --------#
 
 # Define universal data directory
-data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 
@@ -165,7 +165,7 @@ corr_values_mean_subcortical = []
 p_values_mean_subcortical = []
 
 # Load the mean volumetric image
-mean_orig_img = nib.load(f'/home/leni/Documents/Master/data/combined_mask.nii.gz')
+mean_orig_img = nib.load(f'/home/neuromadlab/tVNS_project/data/combined_mask.nii.gz')
 
 for source in annotation_sources:
     # Fetch annotation
@@ -359,12 +359,12 @@ for source in annotation_sources:
                                                   src_space='MNI152', trg_space='MNI152',
                                                   method='linear', resampling='downsample_only')
         print(f'Shape of data_res: {data_res.shape}')
-        print(f'Shpae of anno_res: {anno_res.shape}')
+        print(f'Shape of anno_res: {anno_res.shape}')
 
         # Calculate spatial correlations
-        corr, pval = stats.compare_images(data_res, anno_res)
+        corr = stats.compare_images(data_res, anno_res, metric='pearsonr')
         corr_values_single_subcortical.append(corr)
-        p_values_single_subcortical.append(pval)
+        #p_values_single_subcortical.append(pval)
 
         print(f"Processing {volume_path}")
         print(f'r = {corr:.3f}')
@@ -373,11 +373,11 @@ for source in annotation_sources:
     # Print the summary array of correlation values
     print(f"Here are the spatial correlations and the p-values for 41 single volumes with the annotation {source}:")
     print(np.array(corr_values_single_subcortical))
-    print(p_values_single_subcortical)
+    #print(p_values_single_subcortical)
 
     # Store the correlation values for this annotation in the list of all correlations
     all_corr_values_single_subcortical.append(corr_values_single_subcortical)
-    all_p_values_single_subcortical.append(p_values_single_subcortical)
+    #all_p_values_single_subcortical.append(p_values_single_subcortical)
 
 # Print the list of all correlations
 print("Here are the spatial correlations for all annotations:")
@@ -402,6 +402,73 @@ print(all_corr_values_single_subcortical)
 
 
 
-arviz.plot_forest([all_corr_values_single_subcortical, corr_values_single_cortical], kind='forestplot', var_names=["correlation"], model_names=["Subcortical Data", "Cortical Data"])
+# Plotting
 
+
+# Convert lists to numpy arrays
+np_array_subcortical_single = np.array(all_corr_values_single_subcortical)
+np_array_cortical_single = np.array(corr_values_single_cortical)
+
+np_array_subcortical_mean = np.array(corr_values_mean_subcortical)
+np_array_cortical_mean = np.array(corr_values_mean_cortical)
+
+
+arviz.plot_forest([np_array_subcortical_single, np_array_cortical_single], kind='forestplot', model_names=["Subcortical Data", "Cortical Data"])
+'''
+# Add mean values to the plot as dots
+for i, mean_value in enumerate(np_array_subcortical_mean):
+    plt.plot(mean_value, i, 'ro', label=f'Mean Subcortical: {mean_value:.2f}')
+
+for i, mean_value in enumerate(np_array_cortical_mean):
+    plt.plot(mean_value, i + len(np_array_subcortical_mean), 'bo', label=f'Mean Cortical: {mean_value:.2f}')
+'''
+
+
+# Add map labels
+map_labels = ['ding2010', 'hesse2017', 'kaller2017', 'alarkurtti2015', 'jaworska2020', 'sandiego2015',
+                      'smith2017', 'sasaki2012', 'fazio2016', 'gallezot2010', 'radnakrishnan2018']
+
+# Get the number of maps
+num_maps = len(map_labels)
+
+# Calculate the spacing between each line
+line_spacing = 1 / 2 * (num_maps + 1)
+
+# Plot mean values and map labels
+for i, (mean_value_cortical, mean_value_subcortical, label) in enumerate(zip(np_array_cortical_mean, np_array_subcortical_mean, map_labels)):
+    # Plot mean values for cortical data
+    plt.plot(mean_value_cortical, (2*i + 1) * line_spacing, 'bo', label=f'Mean Cortical: {mean_value_cortical:.2f}', markersize=3)
+    # Plot mean values for subcortical data
+    plt.plot(mean_value_subcortical, (2*i + 2) * line_spacing, 'ro', label=f'Mean Subcortical: {mean_value_subcortical:.2f}', markersize=3)
+    # Plot map labels on the right side
+    plt.text(1.02, (2*i + 1) * line_spacing, label, fontsize=10, verticalalignment='center')
+    plt.text(1.02, (2*i + 2) * line_spacing, label, fontsize=10, verticalalignment='center')
+
+
+'''
+# Calculate the spacing between each line
+line_spacing = 1 / (num_maps + 1)
+
+# Plot mean values and map labels
+for i, (mean_value_cortical, mean_value_subcortical, label) in enumerate(zip(np_array_cortical_mean, np_array_subcortical_mean, map_labels)):
+    # Plot mean values for cortical data
+    plt.plot(mean_value_cortical, i * line_spacing, 'bo', label=f'Mean Cortical: {mean_value_cortical:.2f}')
+    # Plot mean values for subcortical data
+    plt.plot(mean_value_subcortical, (i + num_maps + 1) * line_spacing, 'ro', label=f'Mean Subcortical: {mean_value_subcortical:.2f}')
+    # Plot map labels on the left side
+    plt.text(-0.03, i * line_spacing, label, fontsize=10, verticalalignment='center', horizontalalignment='right')
+    plt.text(-0.03, (i + num_maps + 1) * line_spacing, label, fontsize=10, verticalalignment='center', horizontalalignment='right')
+
+# Set y-ticks and labels
+plt.yticks([(i + 0.5) * line_spacing for i in range(2 * num_maps)], [''] * num_maps + map_labels)
+
+'''
+
+# Add x-axis label
+plt.xlabel('Spatial Correlation Values')
+
+# Add y-axis label
+plt.ylabel('Annotations')
+
+plt.show()
 

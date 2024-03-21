@@ -11,8 +11,6 @@ import os
 import numpy as np
 import nibabel as nib
 import seaborn as sns
-import arviz as az
-import xarray as xr
 import pandas as pd
 from tqdm import tqdm
 from scipy.stats import norm
@@ -38,7 +36,7 @@ print(os.environ['PATH'])
 #-------- LOAD AND PREP DATA --------#
 
 # Define universal data directory
-data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 
@@ -148,7 +146,7 @@ print("Pearson correlation coefficient:", correlation_coefficient)
 print("p-value:", p_value)
 '''
 
-mskFile = ('/home/leni/Tian2020MSA_v1.4/Tian2020MSA/3T/Subcortex-Only/Tian_Subcortex_S2_3T.nii.gz')
+mskFile = ('/home/neuromadlab/tVNS_project/Tian2020MSA_v1.4/Tian2020MSA/3T/Subcortex-Only/Tian_Subcortex_S2_3T.nii.gz')
 
 atlas_nii = mskFile
 atlas_nii = nib.load(mskFile)
@@ -236,6 +234,10 @@ print("Right Hemisphere p-value:", p_value_RH)
 
 # Probleme mit den Shapes
 
-
-
+# Problem: Cortical brain image is split in left and right hemisphere (tuple of gifti), volumetric brain image is not
+# Parcellation does not work with tuple
+print(f'The mean image has been parcellated with the Melbourne Subcortical Atlas.')
+print(mean_img_gm_parc)
+# Bigger problem: Process finished with exit code 137 (interrupted by signal 9:SIGKILL)
+# Memory error?
 
