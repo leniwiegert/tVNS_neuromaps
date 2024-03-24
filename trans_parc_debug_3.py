@@ -368,11 +368,15 @@ for i in range(df_p_values.shape[0]):
 
 plt.title('Correlation Values with Significant P-Values')
 plt.show()
+
+
 '''
 
 
 '''
 # Single heatmaps
+# OLD VERSION
+
 # Calculate the number of rows and columns for the subplot grid
 num_maps = len(annotation_sources)
 num_cols = 3  # Number of columns in the grid
@@ -481,7 +485,8 @@ plt.savefig('heatmap_combined.png')
 plt.show()
 '''
 
-
+'''
+######### CORRECTED VERSION ##
 # Calculate the number of rows and columns for the subplot grid
 num_maps = len(annotation_sources)
 num_cols = 3  # Number of columns in the grid
@@ -602,5 +607,5 @@ plt.savefig('heatmap_combined.png')
 # Show the plot
 plt.show()
 
-
+'''
 
