@@ -3,7 +3,7 @@
 import neuromaps
 import numpy as np
 import seaborn as sns
-from neuromaps.datasets import fetch_annotation
+from neuromaps.datasets import fetch_annotation, fetch_atlas
 from neuromaps.nulls import alexander_bloch
 from neuromaps.resampling import resample_images
 from neuromaps.stats import compare_images
@@ -11,13 +11,15 @@ from nilearn import image as nli
 import os
 import nibabel as nib
 import matplotlib.pyplot as plt
+from nilearn.image import resample_img
+
 # from tqdm import tqdm
 
 
 #-------- PREPARE DATA --------#
 
 # Directory containing the volume files
-data_directory = '/home/neuromadlab/tVNS_project/data/'
+data_directory = '/home/leni/Documents/Master/data/'
 
 # List of volume files in the directory
 volume_files = [f for f in os.listdir(data_directory) if f.startswith('volume_') and f.endswith('.nii')]
@@ -58,8 +60,8 @@ for volume_file in volume_files:
     non_rand_mask_img = nib.Nifti1Image(non_rand_mask_data.astype(np.float32), img.affine)
 
     # Save the non_rand mask image
-    non_rand_mask_img.to_filename(f'/home/neuromadlab/tVNS_project/data/{volume_file}_non_rand_mask.nii.gz')
-    print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
+    non_rand_mask_img.to_filename(f'/home/leni/Documents/Master/data/{volume_file}_non_rand_mask.nii.gz')
+    #print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
 
     # Save the randomized data array for this volume in the dictionary
     #rand_data_arrays_gm[volume_file] = rand_mask_data
@@ -73,7 +75,7 @@ for volume_file in volume_files:
 #-------- RANDOMIZATION --------#
 
 # Number of iterations
-num_iterations = 100
+num_iterations = 10
 
 # List to store correlation values
 corr_values_rand = []
@@ -103,7 +105,7 @@ for iteration in range(num_iterations):
         nib.save(randomized_img, randomized_file_path)
 
         # Print a message indicating the randomization for each key
-        print(f"Randomized data for key: {key}")
+        #print(f"Randomized data for key: {key}")
 
 
     #-------- CALCULATION OF MEANS --------#
@@ -154,13 +156,13 @@ for iteration in range(num_iterations):
     corr_original = compare_images(data_res_rand, anno_res, metric='pearsonr')
 
     # Print the correlation result as needed
-    print(f'Correlation with Randomized Mean Image: {corr_original}')
+    #print(f'Correlation with Randomized Mean Image: {corr_original}')
 
     # Save the correlation value to the list
     corr_values_rand.append(corr_original)
 
 # Print the list of correlation values
-print("Correlation values for each iteration:", corr_values_rand)
+#print("Correlation values for each iteration:", corr_values_rand)
 
 
 
@@ -186,7 +188,7 @@ data_res_rand, anno_res = resample_images(src=mean_orig_img, trg=anno,
 corr_value_orig = compare_images(data_res_rand, anno_res, metric='pearsonr')
 
 # Print the correlation result as needed
-print(f'Correlation with Original Mean Image: {corr_value_orig}')
+#print(f'Correlation with Original Mean Image: {corr_value_orig}')
 
 '''
 #-------- HISTOGRAM --------#
@@ -253,7 +255,7 @@ fig, axs = plt.subplots(num_rows, num_columns, figsize=(12, 12), sharex=False, s
 #cmap_name = 'blues'
 #cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=10)
 
-''' #OLD VERSION WITHOUT P-VALUES
+ #OLD VERSION WITHOUT P-VALUES
 for i, source in enumerate(annotation_sources):
     row = i // num_columns
     col = i % num_columns
@@ -303,18 +305,32 @@ for i, source in enumerate(annotation_sources):
     subplot_ax.set_title(source)
 
 # Remove empty subplots if the number of sources is not a multiple of the number of columns
-for i in range(len(annotation_sources), num_rows * num_columns):
-    fig.delaxes(axs.flatten()[i])
+#for i in range(len(annotation_sources), num_rows * num_columns):
+#    fig.delaxes(axs.flatten()[i])
 
 # Set the limits of the x and y axes manually
-#axs[i].axis([0, 1, 0, 1])
-plt.subplots_adjust(wspace=0.3, hspace=3) # adds twice the default space between the plots
+# axs[i].axis([0, 1, 0, 1])
+plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
 
-#plt.tight_layout()
+# Add custom legend for the colors
+unique_colors = list(set(hist_colors))  # Get unique colors
+legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
+
+# Create legend handles and labels
+legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
+                  for color, label in zip(unique_colors, legend_labels)]
+
+# Add legend with handles and labels
+#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
+
+# Add custom legend for the similarity value
+handles, labels = axs[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='upper right')
 plt.show()
+
+
+
 '''
-
-
 #NEW VERSION WITH P-VALUES
 # Loop through your data and calculate p-values
 for i, source in enumerate(annotation_sources):
@@ -335,6 +351,95 @@ for i, source in enumerate(annotation_sources):
 
     # Generate your null model data (assuming null_model_data is defined)
     #null_model_data = generate_null_model(data_res)  # Replace generate_null_model with your null model generation function
+    null_model_data = alexander_bloch(data_res, atlas='MNI152', density='3mm', parcellation=None)
+    
+    # Calculate correlation between original data and null model
+    null_corr = np.corrcoef(data_res.ravel(), null_model_data.ravel())[0, 1]
+
+    # Calculate p-value
+    p_value = (np.sum(np.abs(corr_values_rand_list[i]) >= np.abs(corr_val_mean)) + 1) / (len(corr_values_rand_list[i]) + 1)
+
+    # Append to lists
+    corr_vals_mean_list.append(corr_val_mean)
+    pval_mean_list.append(p_value)
+
+    # Determine the correct subplot to use
+    if num_rows == 1:
+        subplot_ax = axs[col]
+    else:
+        subplot_ax = axs[row, col]
+
+    # Create a histogram for the current map
+    sns.histplot(data=corr_values_rand_list[i], color=hist_colors[i], edgecolor='black', kde=True,
+                 ax=subplot_ax, legend=False)
+
+    # Plot vertical line for the similarity value
+    # subplot_ax.axvline(corr_val_mean, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
+
+    # Add p-value as text annotation in the top right part of each histogram
+    subplot_ax.text(0.95, 0.95, f'p = {p_value:.3f}', transform=subplot_ax.transAxes, ha='right', va='top',
+                    bbox=dict(facecolor='white', alpha=0.5))
+
+    subplot_ax.set_xlabel('Spatial Correlation Values')
+    subplot_ax.set_ylabel('Frequency')
+    subplot_ax.set_title(source)
+
+# Remove empty subplots if the number of sources is not a multiple of the number of columns
+for i in range(len(annotation_sources), num_rows * num_columns):
+    fig.delaxes(axs.flatten()[i])
+
+# Set the limits of the x and y axes manually
+# axs[i].axis([0, 1, 0, 1])
+plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
+
+# Add custom legend for the colors
+unique_colors = list(set(hist_colors))  # Get unique colors
+legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
+
+# Create legend handles and labels
+legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
+                  for color, label in zip(unique_colors, legend_labels)]
+
+# Add legend with handles and labels
+#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
+
+# Add custom legend for the similarity value
+handles, labels = axs[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='upper right')
+plt.show()'''
+
+##############################################################################
+
+# old error?
+#Traceback (most recent call last):
+#  File "/mnt/ghrelin/tvns_neuromaps/rand_tVNS_vs_sham_corrected.py", line 268, in <module>
+#    corr_val_mean, pval_mean = neuromaps.stats.compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
+#TypeError: cannot unpack non-iterable numpy.float64 object
+
+
+'''
+#NEW VERSION WITH P-VALUES
+corr_vals_mean_list = []
+pval_mean_list = []
+
+# Loop through your data and calculate p-values
+for i, source in enumerate(annotation_sources):
+    row = i // num_columns
+    col = i % num_columns
+
+    # Fetch annotation
+    annotation = fetch_annotation(source=source)
+
+    # Resample the original data to match the annotation space
+    data_res, anno_res = resample_images(src=mean_rand_img, trg=annotation,
+                                         src_space='MNI152', trg_space='MNI152',
+                                         method='linear', resampling='downsample_only')
+
+    # Calculate spatial correlation
+    corr_val_mean = neuromaps.stats.compare_images(data_res, annotation, metric='pearsonr', ignore_zero=True,
+                                                   nan_policy='omit')
+
+    # Generate your null model data (assuming null_model_data is defined)
     null_model_data = alexander_bloch(data_res, atlas='MNI152', density='3mm', parcellation=None)
 
     # Calculate correlation between original data and null model
@@ -376,18 +481,22 @@ for i in range(len(annotation_sources), num_rows * num_columns):
 # axs[i].axis([0, 1, 0, 1])
 plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
 
+# Add custom legend for the colors
+unique_colors = list(set(hist_colors))  # Get unique colors
+legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
+
+# Create legend handles and labels
+legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
+                  for color, label in zip(unique_colors, legend_labels)]
+
+# Add legend with handles and labels
+#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
+
+# Add custom legend for the similarity value
+handles, labels = axs[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='upper right')
 plt.show()
-
-##############################################################################
-
-# old error?
-#Traceback (most recent call last):
-#  File "/mnt/ghrelin/tvns_neuromaps/rand_tVNS_vs_sham_corrected.py", line 268, in <module>
-#    corr_val_mean, pval_mean = neuromaps.stats.compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
-#TypeError: cannot unpack non-iterable numpy.float64 object
-
-
-
+'''
 
 
 

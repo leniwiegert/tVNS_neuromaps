@@ -18,13 +18,13 @@ import matplotlib.pyplot as plt
 #-------- PREPARE DATA --------#
 
 # Directory containing the volume files
-data_directory = '/Users/leni/Documents/Master/Data/'
+data_directory = '/home/leni/Documents/Master/data'
 
 # List of volume files in the directory
 volume_files = [f for f in os.listdir(data_directory) if f.startswith('volume_') and f.endswith('.nii')]
 
 # Specify the gray matter mask file
-gray_matter_mask_file = '/Users/leni/Documents/Master/Data/out_GM_p_0_15.nii'
+gray_matter_mask_file = os.path.join(data_directory, 'out_GM_p_0_15.nii')
 gray_matter_mask = nib.load(gray_matter_mask_file)
 
 
@@ -62,7 +62,7 @@ for volume_file in volume_files:
     non_rand_mask_img = nib.Nifti1Image(non_rand_mask_data.astype(np.float32), img.affine)
 
     # Save the non_rand mask image
-    non_rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_non_rand_mask.nii.gz')
+    non_rand_mask_img.to_filename(f'/home/leni/Documents/Master/data/{volume_file}_non_rand_mask.nii.gz')
     print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
 
     # Save the randomized data array for this volume in the dictionary
@@ -83,7 +83,7 @@ for volume_file in volume_files:
         # Optionally, save the randomized mask data as a NIfTI file
         rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
         rand_mask_img.to_filename(
-            f'/Users/leni/Documents/Master/Data/{volume_file}_random_{randomization_index}_mask.nii.gz')
+            f'/home/leni/Documents/Master/data/{volume_file}_random_{randomization_index}_mask.nii.gz')
 
         # You can add a print statement here if you want to indicate each randomization
         print(f"Randomization {randomization_index + 1} saved for {volume_file}")
@@ -112,7 +112,7 @@ correlations_rand = []
 # Iterate over each volume file
 for volume_file in volume_files[0:]:
     # Load the resampled original data image
-    mean_non_rand_img = nib.load(f'/Users/leni/Documents/Master/Data/{volume_file}_non_rand_mask.nii.gz')
+    mean_non_rand_img = nib.load(f'//home/leni/Documents/Master/data/{volume_file}_non_rand_mask.nii.gz')
 
     # Resample the original data to match the annotation space
     data_resampled_original, anno_resampled_original = resample_images(src=mean_non_rand_img, trg=anno,
