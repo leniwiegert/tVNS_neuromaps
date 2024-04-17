@@ -18,7 +18,8 @@ from neuromaps import datasets, images, nulls
 from neuromaps.stats import compare_images
 
 # Define universal data directory
-data_directory = '/home/leni/Documents/Master/data/'
+#data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 #----------- LOAD AND GET TO KNOW THE DATA ----------#
 
@@ -30,7 +31,6 @@ img.shape
 np.set_printoptions(precision=2, suppress=True)
 # The array proxy allows us to create the image object without immediately loading all the array data from disk
 nib.is_proxy(img.dataobj)
-
 
 #----------- WORK WITH IMAGE DATA ----------#
 
@@ -49,7 +49,8 @@ for volume_index in range(img_data_4d.shape[-1]):
     # Create a new NIfTI image for the single volume
     single_volume_img = nib.Nifti1Image(single_volume, img.affine)
     # Save the single volume to a new NIfTI file
-    output_path = f'/home/leni/Documents/Master/data/volume_{volume_index + 1}.nii'
+    #output_path = f'/home/leni/Documents/Master/data/volume_{volume_index + 1}.nii'
+    output_path = f'{data_directory}volume_{volume_index + 1}.nii'
     nib.save(single_volume_img, output_path)
     print(f"Volume {volume_index + 1} saved to {output_path}")
 
@@ -74,7 +75,10 @@ volumes_array = np.array(volumes)
 mean_img = nli.mean_img(img)
 
 # Mean image for each volume separately
-base_path = '/home/leni/Documents/Master/data/'
+#base_path = '/home/leni/Documents/Master/data/'
+base_path = '/home/neuromadlab/tVNS_project/data/'
+
+
 volume_files = [f'{base_path}volume_{i}.nii' for i in range(1, 42)]
 # Initialize a list to store mean images
 mean_images = []
@@ -101,30 +105,6 @@ for volume_file in volume_files:
 mean_img_vol_1 = mean_images[0]
 mean_img_vol_1_data = mean_img_vol_1.get_fdata()
 # Double Check: There are non-NaN values in the array.
-
-'''
-# Threshold/Clustering not needed because of the gray matter mask
-
-#thr = nli.threshold_img(mean_img_vol_1, threshold='95%')
-
-# Keep the regions that are bigger than 1000mm^3
-voxel_size = np.prod(thr.header['pixdim'][1:4])  # Size of 1 voxel in mm^3
-print(voxel_size)
-
-# Create a mask that only keeps those big clusters
-cluster = connected_regions(thr, min_region_size=1000. / voxel_size, smoothing_fwhm=1)[0]
-# Binarize the cluster file to create a overlay image
-#overlay = nli.math_img('np.mean(img,axis=3) > 0', img=cluster)
-
-# Handle non-finite values in the cluster data
-cluster_data = cluster.get_fdata()
-cluster_data[np.isnan(cluster_data)] = 0  # Replace NaN with 0
-
-# Create a colormap mask based on the values in the cluster
-cmap_mask_data = np.mean(cluster_data, axis=3)  # Adjust the threshold as needed
-cmap_mask_img = nib.Nifti1Image(cmap_mask_data.astype(np.float32), cluster.affine)
-'''
-
 
 # Replace non-finite values with a gray matter mask
 gray_matter_mask_file = os.path.join(data_directory, 'out_GM_p_0_15.nii')
@@ -195,7 +175,62 @@ print(f'The correlation value for the mean image of my data and the neuromaps an
 # -1 indicates a perfect negative linear relationship.
 
 
-# --- Plotting ---#
+#------------ SPATIAL CORRELATIONS FOR ALL 41 FILES ------------#
+
+# Each volume of my data compared to Hesse 2017
+
+correlation_values = []
+
+for i in range(1, 42):
+    filename_mean = f'{data_directory}volume_{i}.nii'
+    filename_combined_mask = f'combined_mask_img_{i}.nii'
+    mean_img_vol = nib.load(filename_mean)
+
+    # Additional code to define combined_mask_data_1 to combined_mask_data_41
+    gray_matter_mask_resampled = nilearn.image.resample_to_img(gray_matter_mask, mean_img_vol)
+
+    if not np.all(gray_matter_mask_resampled.shape == mean_img_vol.shape):
+        raise ValueError('Shape of input volume is incompatible.')
+
+    combined_mask_data = np.where(np.isnan(mean_img_vol.get_fdata()), gray_matter_mask_resampled.get_fdata(), mean_img_vol.get_fdata())
+
+    combined_mask_img = nib.Nifti1Image(combined_mask_data.astype(np.float32), mean_img_vol.affine)
+    combined_mask_img = nilearn.image.resample_to_img(combined_mask_img, mask_image)
+
+    combined_mask_img_data = combined_mask_img.get_fdata()
+    norm = Normalize(vmin=np.min(combined_mask_img_data), vmax=np.max(combined_mask_img_data))
+
+    # Continue with the rest of the code as in the previous example
+    # Fetch annotation
+    hesse2017 = fetch_annotation(source='hesse2017')
+
+    # Resample the second image to match the dimensions of the first image
+    img_hesse2017_resampled = nilearn.image.resample_img(hesse2017, target_affine=combined_mask_img.affine,
+                                                         target_shape=combined_mask_img.shape,
+                                                         interpolation='nearest')
+
+    data_res, hesse_res = resample_images(src=combined_mask_img, trg=hesse2017,
+                                          src_space='MNI152', trg_space='MNI152',
+                                          method='linear', resampling='downsample_only')
+
+    # Extract data arrays
+    data_hesse2017_rs = img_hesse2017_resampled.get_fdata()
+
+    corr = compare_images(data_res, hesse_res, metric='pearsonr')
+    correlation_values.append(corr)
+
+    print(f"Processing {filename_combined_mask}")
+    print("Original lengths - data_combined_mask:", len(combined_mask_img_data), "data_hesse2017:", len(data_hesse2017_rs))
+    print(f'r = {corr:.3f}')
+    print("\n")
+
+# Print the summary array of correlation values
+print("Here are the spatial correlations for my data with Hesse 2017:")
+print(np.array(correlation_values))
+
+
+
+#--- Plotting - Group Level ---#
 
 # Plotting the correlations of NE, dopamine and serotonin PET maps with the mean image of my data
 
@@ -252,61 +287,7 @@ plt.show()
 
 
 
-#------------ SPATIAL CORRELATIONS FOR ALL 41 FILES ------------#
-
-# Each volume of my data compared to Hesse 2017
-
-correlation_values = []
-
-for i in range(1, 42):
-    filename_mean = f'/Users/leni/Documents/Master/Data/volume_{i}.nii'
-    filename_combined_mask = f'combined_mask_img_{i}.nii'
-    mean_img_vol = nib.load(filename_mean)
-
-    # Additional code to define combined_mask_data_1 to combined_mask_data_41
-    gray_matter_mask_resampled = nilearn.image.resample_to_img(gray_matter_mask, mean_img_vol)
-
-    if not np.all(gray_matter_mask_resampled.shape == mean_img_vol.shape):
-        raise ValueError('Shape of input volume is incompatible.')
-
-    combined_mask_data = np.where(np.isnan(mean_img_vol.get_fdata()), gray_matter_mask_resampled.get_fdata(), mean_img_vol.get_fdata())
-
-    combined_mask_img = nib.Nifti1Image(combined_mask_data.astype(np.float32), mean_img_vol.affine)
-    combined_mask_img = nilearn.image.resample_to_img(combined_mask_img, mask_image)
-
-    combined_mask_img_data = combined_mask_img.get_fdata()
-    norm = Normalize(vmin=np.min(combined_mask_img_data), vmax=np.max(combined_mask_img_data))
-
-    # Continue with the rest of the code as in the previous example
-    # Fetch annotation
-    hesse2017 = fetch_annotation(source='hesse2017')
-
-    # Resample the second image to match the dimensions of the first image
-    img_hesse2017_resampled = nilearn.image.resample_img(hesse2017, target_affine=combined_mask_img.affine,
-                                                         target_shape=combined_mask_img.shape,
-                                                         interpolation='nearest')
-
-    data_res, hesse_res = resample_images(src=combined_mask_img, trg=hesse2017,
-                                          src_space='MNI152', trg_space='MNI152',
-                                          method='linear', resampling='downsample_only')
-
-    # Extract data arrays
-    data_hesse2017_rs = img_hesse2017_resampled.get_fdata()
-
-    corr = compare_images(data_res, hesse_res, metric='pearsonr')
-    correlation_values.append(corr)
-
-    print(f"Processing {filename_combined_mask}")
-    print("Original lengths - data_combined_mask:", len(combined_mask_img_data), "data_hesse2017:", len(data_hesse2017_rs))
-    print(f'r = {corr:.3f}')
-    print("\n")
-
-# Print the summary array of correlation values
-print("Here are the spatial correlations for my data with Hesse 2017:")
-print(np.array(correlation_values))
-
-
-# --- Plotting ---#
+#--- Plotting - Single Subject Level ---#
 
 # Assuming correlation_values is your array of correlation values
 correlation_values = np.array([-0.089, 0.057, 0.174, 0.176, -0.203, 0.141, -0.109, 0.127, -0.039, 0.021, -0.057, -0.172, 0.191, 0.198, 0.252, -0.051, -0.029, 0.224, 0.183, -0.102, 0.054, 0.191, -0.043, 0.203, -0.095, -0.094, -0.215, 0.011, -0.315, 0.073, -0.049, 0.047, -0.149, 0.429, 0.114, -0.065, -0.092, -0.146, 0.127, -0.122, -0.085])
@@ -321,10 +302,4 @@ plt.xlabel('Volume Index')
 plt.ylabel('Correlation Coefficient')
 plt.grid(True)
 plt.show()
-
-
-
-
-
-
 

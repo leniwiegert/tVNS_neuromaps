@@ -13,27 +13,20 @@ brain maps.
 import neuromaps as nm
 from neuromaps import datasets
 
-# general function: neuromaps.datasets.fetch_atlas()
-fslr = datasets.fetch_atlas(atlas='fslr', density='32k')
-annotations = datasets.available_annotations()
-#print(annotations)
-
-#for annotation in annotations:
-#    print(annotation)
-
-fslr = datasets.fetch_atlas(atlas='fslr', density='32k')
-#print(fslr.keys())
-
-# Currently available annotations (i.e. brain maps)
+# Currently available Neuromaps annotations
 annotations = datasets.available_annotations()
 print(f'Available annotations: {len(annotations)}')
 
 # Example: Download of PET tracer binding (BPnd) to D2 (dopamine receptor) from a 2015 study
 alarkurtti = datasets.fetch_annotation(source='alarkurtti2015', desc='raclopride')
 print(alarkurtti)
-# The .nii file of this annotation can now be found in the corresponding folder!
+# The NIFTI file of this annotation can now be found in the corresponding folder!
 
 
+
+
+'''
+# not in use
 #--------------- USING SPATIAL NULL MODELS ----------------#
 
 # How to use spatial null models in neuromaps.nulls to test the correlation between two brain annotations
@@ -71,6 +64,5 @@ print(rotated.shape)
 
 corr, pval = stats.compare_images(ding, abagen, nulls=rotated)
 print(f'Correlation: r = {corr:.02f}, p = {pval:.04f}')
-
-
+'''
 

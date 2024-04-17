@@ -3,7 +3,33 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import ptitprince as pt
 from scipy.stats import pearsonr
+
+## IMPORTS
+
+data_directory = '/home/leni/Documents/Master/data/'
+
+# MEANS
+# Load numpy array from the file in data_directory
+file_path_cort_mean = os.path.join(data_directory, 'corr_values_mean_cortical.npy')
+corr_values_mean_cortical = np.load(file_path_cort_mean)
+print(corr_values_mean_cortical.shape)
+
+file_path_subcort_mean = os.path.join(data_directory, 'corr_values_mean_subcortical.npy')
+corr_values_mean_subcortical = np.load(file_path_subcort_mean)
+print(corr_values_mean_subcortical.shape)
+
+# INDIVIDUAL LEVEL
+
+# Load numpy array from the file in data_directory
+file_path_cort = os.path.join(data_directory, 'corr_values_cortical_single_maps.npy')
+corr_values_ss_cortical_array = np.load(file_path_cort, allow_pickle=True).item()
+print(len(corr_values_ss_cortical_array))
+
+file_path_subcort = os.path.join(data_directory, 'corr_values_subcortical_single_maps.npy')
+corr_values_ss_subcortical_array = np.load(file_path_subcort,  allow_pickle=True).item()
+print(len(corr_values_ss_subcortical_array))
 
 
 '''
@@ -62,17 +88,8 @@ plt.show()
 
 '''
 
-data_directory = '/home/leni/Documents/Master/data/'
-
-# Load numpy array from the file in data_directory
-file_path_cort = os.path.join(data_directory, 'corr_values_cortical_single_maps.npy')
-corr_values_ss_cortical_array = np.load(file_path_cort, allow_pickle=True).item()
-print(len(corr_values_ss_cortical_array))
-
-file_path_subcort = os.path.join(data_directory, 'corr_values_subcortical_single_maps.npy')
-corr_values_ss_subcortical_array = np.load(file_path_subcort,  allow_pickle=True).item()
-print(len(corr_values_ss_subcortical_array))
-
+# INDIVIDUAL DATA PLOTTING
+'''
 # Print loaded data structures
 print("Cortical data:")
 print(corr_values_ss_cortical_array)
@@ -105,7 +122,7 @@ for map_name, cortical_values in corr_values_ss_cortical_array.items():
         'Category': ['Cortical'] * len(cortical_values) + ['Subcortical'] * len(subcortical_values),
         'Value': cortical_values + subcortical_values
     })
-'''
+
 # commented out for correlation calulcation
     # Plot raincloud plot
     sns.violinplot(x='Category', y='Value', data=df, inner="quartile", palette=["lightblue", "lightgreen"])
@@ -120,19 +137,46 @@ for map_name, cortical_values in corr_values_ss_cortical_array.items():
 
     # Show plot
     plt.show()
-
 '''
 
 
+# Create an empty list to store combined data
+combined_data = []
+
+# Combine cortical and subcortical values into a single DataFrame
+for map_name, cortical_values in corr_values_ss_cortical_array.items():
+    subcortical_values = corr_values_ss_subcortical_array.get(map_name, None)
+    if subcortical_values is not None and len(subcortical_values) == len(cortical_values):
+        combined_data.extend([(map_name, 'Cortical', value) for value in cortical_values])
+        combined_data.extend([(map_name, 'Subcortical', value) for value in subcortical_values])
+
+# Create DataFrame from combined data
+df = pd.DataFrame(combined_data, columns=['Map', 'Category', 'Value'])
+
+# Set up the plot
+plt.figure(figsize=(10, 6))
+ax = plt.gca()
+
+# Create spaghetti plot
+pt.half_violinplot(x='Category', y='Value', data=df, dodge=True, linewidth=1, palette=["lightblue", "lightgreen"], ax=ax)
+
+# Add histograms on the sides
+pt.stripplot(x='Category', y='Value', data=df, jitter=True, ax=ax, palette=["lightblue", "lightgreen"], dodge=True, linewidth=1, size=1.5)
+
+# Customize plot
+plt.title('Cortical vs Subcortical Correlation')
+plt.xlabel('Category')
+plt.ylabel('Correlation Value')
+
+# Show plot
+plt.tight_layout()
+plt.show()
+
+
+
+
+'''
 ##### Correlation Calculation for Mean Data (Group Level)
-
-file_path_cort_mean = os.path.join(data_directory, 'corr_values_mean_cortical.npy')
-corr_values_mean_cortical = np.load(file_path_cort_mean)
-print(corr_values_mean_cortical.shape)
-
-file_path_subcort_mean = os.path.join(data_directory, 'corr_values_mean_subcortical.npy')
-corr_values_mean_subcortical = np.load(file_path_subcort_mean)
-print(corr_values_mean_subcortical.shape)
 
 # Correlation coefficient for
 corr_coeff_mean, p_value = pearsonr(corr_values_mean_cortical, corr_values_mean_subcortical)
@@ -164,7 +208,5 @@ for key, value in correlation_coefficients.items():
 #Correlation coefficient for fazio2016: 0.535443141934806
 #Correlation coefficient for gallezot2010: 0.8180894565459425
 #Correlation coefficient for radnakrishnan2018: 0.4698982491796577
-
-
-
+'''
 

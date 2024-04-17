@@ -45,3 +45,4 @@ overlay = nli.math_img('np.mean(img,axis=3) > 0', img=cluster)
 # Plotting, add background
 plotting.plot_roi(overlay, bg_img=mask_image, display_mode='z', dim=-.5, cmap='plasma');
 plotting.show()
+

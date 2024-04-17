@@ -19,7 +19,8 @@ from nilearn.image import resample_img
 #-------- PREPARE DATA --------#
 
 # Directory containing the volume files
-data_directory = '/home/leni/Documents/Master/data/'
+#data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 # List of volume files in the directory
 volume_files = [f for f in os.listdir(data_directory) if f.startswith('volume_') and f.endswith('.nii')]
@@ -60,7 +61,8 @@ for volume_file in volume_files:
     non_rand_mask_img = nib.Nifti1Image(non_rand_mask_data.astype(np.float32), img.affine)
 
     # Save the non_rand mask image
-    non_rand_mask_img.to_filename(f'/home/leni/Documents/Master/data/{volume_file}_non_rand_mask.nii.gz')
+    #non_rand_mask_img.to_filename(f'/home/leni/Documents/Master/data/{volume_file}_non_rand_mask.nii.gz')
+    non_rand_mask_img.to_filename(f'{data_directory}{volume_file}_non_rand_mask.nii.gz')
     #print(f"File saved: {volume_file}_non_rand_mask.nii.gz")
 
     # Save the randomized data array for this volume in the dictionary
@@ -75,7 +77,7 @@ for volume_file in volume_files:
 #-------- RANDOMIZATION --------#
 
 # Number of iterations
-num_iterations = 10
+num_iterations = 1000
 
 # List to store correlation values
 corr_values_rand = []
@@ -190,37 +192,6 @@ corr_value_orig = compare_images(data_res_rand, anno_res, metric='pearsonr')
 # Print the correlation result as needed
 #print(f'Correlation with Original Mean Image: {corr_value_orig}')
 
-'''
-#-------- HISTOGRAM --------#
-
-# Plotting the histogram for permutation test distribution
-plt.figure(figsize=(12, 6))
-
-# Create a histogram of the original and randomized correlation values
-plt.hist([corr_values_rand], bins=30, color=['blue'],
-         alpha=0.7, label=['Randomized Data'], edgecolor='black', stacked=True)
-
-# Calculate mean correlation value of the original data
-#mean_original = np.mean(corr_value_orig)
-
-# Adding a line for the original correlation value (either with mean_original or from the link)
-#plt.axvline(x=mean_original, color='red', linestyle='dashed', linewidth=2, label='Original Data')
-#plt.axvline(x=-0.085, color='red', linestyle='dashed', linewidth=2, label='Original Data')
-plt.axvline(x=corr_value_orig, color='red', linestyle='dashed', linewidth=2, label='Original Data')
-
-# Adding labels and title for the histogram
-plt.xlabel('Correlation Value')
-plt.ylabel('Frequency')
-plt.title('Permutation Test Distribution of Original and Randomized Values')
-plt.legend()
-plt.grid(True)
-
-# Display the histogram
-plt.tight_layout()
-plt.show()
-
-'''
-
 
 ########### OPTIMIZED PLOTTING ###########
 
@@ -304,12 +275,7 @@ for i, source in enumerate(annotation_sources):
     subplot_ax.set_ylabel('Frequency')
     subplot_ax.set_title(source)
 
-# Remove empty subplots if the number of sources is not a multiple of the number of columns
-#for i in range(len(annotation_sources), num_rows * num_columns):
-#    fig.delaxes(axs.flatten()[i])
-
 # Set the limits of the x and y axes manually
-# axs[i].axis([0, 1, 0, 1])
 plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
 
 # Add custom legend for the colors
@@ -320,9 +286,6 @@ legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corres
 legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
                   for color, label in zip(unique_colors, legend_labels)]
 
-# Add legend with handles and labels
-#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
-
 # Add custom legend for the similarity value
 handles, labels = axs[0, 0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='upper right')
@@ -332,6 +295,8 @@ plt.show()
 
 '''
 #NEW VERSION WITH P-VALUES
+# not working correctly
+
 # Loop through your data and calculate p-values
 for i, source in enumerate(annotation_sources):
     row = i // num_columns
@@ -406,19 +371,12 @@ legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
 # Add custom legend for the similarity value
 handles, labels = axs[0, 0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='upper right')
-plt.show()'''
-
-##############################################################################
-
-# old error?
-#Traceback (most recent call last):
-#  File "/mnt/ghrelin/tvns_neuromaps/rand_tVNS_vs_sham_corrected.py", line 268, in <module>
-#    corr_val_mean, pval_mean = neuromaps.stats.compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
-#TypeError: cannot unpack non-iterable numpy.float64 object
+plt.show()
 
 
-'''
-#NEW VERSION WITH P-VALUES
+#NEW VERSION 2 WITH P-VALUES
+# not working correctly
+
 corr_vals_mean_list = []
 pval_mean_list = []
 

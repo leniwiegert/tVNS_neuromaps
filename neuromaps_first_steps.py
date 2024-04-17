@@ -53,14 +53,4 @@ from neuromaps import datasets
 # general function: neuromaps.datasets.fetch_atlas()
 fslr = datasets.fetch_atlas(atlas='fslr', density='32k')
 
-'''
-# Annotations are identified by a len-4 tuple of values:
-# Source, description, coordinate system, density/resolution
-# Search annotations (the function also accepts keyword arguments in case we want to narrow down the list of returned results):
-# neuromaps.datasets.available_annotations(source='fisher')
-neuromaps.datasets.available_annotations()
-# Find example annotation:
-for annotation in available_annotations():
-    print(annotation)
-'''
 

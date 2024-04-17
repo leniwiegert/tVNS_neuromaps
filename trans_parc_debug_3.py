@@ -1,10 +1,11 @@
 '''
 @author: Lena Wiegert
 
-This code transforms MNI152 data to fsLR space and parcellates it with the Schaefer atlas.
+This code transforms MNI152 data to fsLR space and parcellates it with the Schaefer atlas
+on group and individual level.
 It is based on this workshop: https://www.youtube.com/watch?v=pc8zMMTLxmA
 
-The code further visualizes the significance of the spatial correlations for mean and individual data.
+The code further visualizes the significance of the spatial correlations for group and individual data.
 '''
 
 import os
@@ -29,6 +30,7 @@ print(os.environ['PATH'])
 #-------- LOAD AND PREP DATA --------#
 
 # Define universal data directory
+#data_directory = '/home/leni/Documents/Master/data/'
 data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
@@ -104,8 +106,6 @@ nulls_mean = alexander_bloch(mean_img_fslr_parc, atlas='fsLR', density='32k', pa
 print(nulls_mean)
 print(len(nulls_mean))
 # Should be 400
-
-
 
 #--------- SPATIAL CORRELATIONS FOR MEAN IMAGE --------#
 
