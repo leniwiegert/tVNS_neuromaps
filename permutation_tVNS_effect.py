@@ -72,8 +72,6 @@ for volume_file in volume_files:
     #rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
     #rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_rand_mask.nii.gz')
 
-
-
 #-------- RANDOMIZATION --------#
 
 # Number of iterations
@@ -151,17 +149,17 @@ for iteration in range(num_iterations):
 
     # Resample the original data to match the annotation space
     data_res_rand, anno_res = resample_images(src=mean_rand_img, trg=anno,
-                                                                       src_space='MNI152', trg_space='MNI152',
-                                                                       method='linear', resampling='downsample_only')
+                                                src_space='MNI152', trg_space='MNI152',
+                                                method='linear', resampling='downsample_only')
 
     # Compare resampled original data with neuromaps annotation using the compare_images function
-    corr_original = compare_images(data_res_rand, anno_res, metric='pearsonr')
+    corr_rand = compare_images(data_res_rand, anno_res, metric='pearsonr')
 
     # Print the correlation result as needed
     #print(f'Correlation with Randomized Mean Image: {corr_original}')
 
     # Save the correlation value to the list
-    corr_values_rand.append(corr_original)
+    corr_values_rand.append(corr_rand)
 
 # Print the list of correlation values
 #print("Correlation values for each iteration:", corr_values_rand)
@@ -172,6 +170,8 @@ for iteration in range(num_iterations):
 
 # Calculate spatial correlation of the mean image of the original data or get it from:
 # https://docs.google.com/spreadsheets/d/1B0r_KWS_hOjlmUno4ZjLTa3ownrMCHXPvZ1i6DoqL8o/edit#gid=493335622
+
+# Original correlation value for hesse2017
 
 # Fetch desired annotation (add description, space, and density if needed for identification)
 anno = fetch_annotation(source='hesse2017')
@@ -187,15 +187,136 @@ data_res_rand, anno_res = resample_images(src=mean_orig_img, trg=anno,
                                                                    method='linear', resampling='downsample_only')
 
 # Compare resampled original data with neuromaps annotation using the compare_images function
-corr_value_orig = compare_images(data_res_rand, anno_res, metric='pearsonr')
+#corr_value_orig = compare_images(data_res_rand, anno_res, metric='pearsonr')
 
 # Print the correlation result as needed
 #print(f'Correlation with Original Mean Image: {corr_value_orig}')
 
 
+### TEST ###
+
+annotation_sources = ['ding2010', 'hesse2017', 'kaller2017', 'alarkurtti2015', 'jaworska2020', 'sandiego2015',
+                      'smith2017', 'sasaki2012', 'fazio2016', 'gallezot2010', 'radnakrishnan2018']
+
+# Manually define colors for each histogram
+hist_colors = ['blue', 'blue', 'olive', 'green', 'green', 'green', 'green', 'cyan', 'red', 'orange', 'yellow']
+
+# Create list for saving the r-value, the p-value and the nulls for each correlation
+corr_vals_mean_list = []
+pval_mean_list = []
+
+# Define the number of columns you want
+num_columns = 2
+
+# Calculate the number of rows based on the number of annotation sources and the number of columns
+num_rows = -(-len(annotation_sources) // num_columns)  # Ceiling division to ensure all items are shown
+
+# All histograms in one figure
+fig, axs = plt.subplots(num_rows, num_columns, figsize=(12, 12), sharex=False, sharey=False)
+
+
+# Plotting loop
+for i, source in enumerate(annotation_sources):
+    row = i // num_columns
+    col = i % num_columns
+
+    # Fetch annotation
+    annotation = fetch_annotation(source=source)
+
+    # Resample the original data to match the annotation space
+    data_res, anno_res = resample_images(src=mean_rand_img, trg=annotation,
+                                         src_space='MNI152', trg_space='MNI152',
+                                         method='linear', resampling='downsample_only')
+
+    # Calculate spatial correlation
+    corr_val_mean = compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
+                                   nan_policy='omit')
+
+    # Calculate the correlation value for the original data
+    data_res_orig, anno_res_orig = resample_images(src=mean_orig_img, trg=annotation,
+                                                   src_space='MNI152', trg_space='MNI152',
+                                                   method='linear', resampling='downsample_only')
+    corr_val_orig = compare_images(data_res_orig, anno_res_orig, metric='pearsonr', ignore_zero=True,
+                                   nan_policy='omit')
+
+    # Determine the correct subplot to use
+    if num_rows == 1:
+        subplot_ax = axs[col]
+    else:
+        subplot_ax = axs[row, col]
+
+    # Create a histogram for the current map
+    sns.histplot(data=corr_values_rand, color=hist_colors[i], edgecolor='black', kde=True,
+                 ax=subplot_ax, legend=False)
+
+    # Plot vertical line for the original correlation value
+    subplot_ax.axvline(corr_val_orig, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
+
+    subplot_ax.set_xlabel('Spatial Correlation Values')
+    subplot_ax.set_ylabel('Frequency')
+    subplot_ax.set_title(source)
+
+# Set the limits of the x and y axes manually
+plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
+
+# Add custom legend for the colors
+unique_colors = list(set(hist_colors))  # Get unique colors
+legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
+
+# Create legend handles and labels
+legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
+                  for color, label in zip(unique_colors, legend_labels)]
+
+# Add custom legend for the similarity value
+handles, labels = axs[0, 0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='upper right')
+plt.show()
+
+
+
+# Original correlation value for all annotations
+# List to store correlation values for each brain map
+corr_values_orig = []
+
+# Iterate over each brain map
+for source in annotation_sources:
+    # Fetch annotation
+    annotation = fetch_annotation(source=source)
+
+    # Resample the original data to match the annotation space
+    data_res_orig, anno_res = resample_images(src=mean_orig_img, trg=annotation,
+                                              src_space='MNI152', trg_space='MNI152',
+                                              method='linear', resampling='downsample_only')
+
+    # Calculate spatial correlation
+    corr_val_orig = compare_images(data_res_orig, anno_res, metric='pearsonr', ignore_zero=True,
+                                   nan_policy='omit')
+
+    # Append the correlation value to the list
+    corr_values_orig.append(corr_val_orig)
+
+# Print or use the list of correlation values for each brain map
+print("Correlation values for each brain map:", corr_values_orig)
+
+
 ########### OPTIMIZED PLOTTING ###########
 
 #--------- LOOP FOR SC FOR MEAN IMAGE WITH 11 MAPS ---------#
+
+# Mapping of annotation sources to categories
+category_mapping = {
+    'ding2010': 'NE',
+    'hesse2017': 'NE',
+    'kaller2017': 'D1',
+    'alarkurtti2015': 'D2/D3',
+    'jaworska2020': 'D2/D3',
+    'sandiego2015': 'D2/D3',
+    'smith2017': 'D2/D3',
+    'sasaki2012': 'DAT',
+    'fazio2016': '5-HTT',
+    'gallezot2010': '5-HTb',
+    'radnakrishnan2018': '5-HT6'
+}
 
 # List of annotation sources
 #annotation_sources = ['alarkurtti2015', 'ding2010', 'fazio2016', 'gallezot2010', 'hesse2017',
@@ -209,8 +330,7 @@ hist_colors = ['blue', 'blue', 'olive', 'green', 'green', 'green', 'green', 'cya
 # Create list for saving the r-value, the p-value and the nulls for each correlation
 corr_vals_mean_list = []
 pval_mean_list = []
-corr_nulls_mean_list = []
-corr_values_rand_list = []
+#corr_nulls_mean_list = []
 
 # Define the number of columns you want
 num_columns = 2
@@ -219,12 +339,12 @@ num_columns = 2
 num_rows = -(-len(annotation_sources) // num_columns)  # Ceiling division to ensure all items are shown
 
 # All histograms in one figure
-#fig, axs = plt.subplots(len(annotation_sources), figsize=(12, 6), sharex=False, sharey=False)
 fig, axs = plt.subplots(num_rows, num_columns, figsize=(12, 12), sharex=False, sharey=False)
 
 #colors = [(0, 0, 0.5, 0.1), (0, 0, 0.5, 0.5), (0, 0, 0.5, 0.9)]
 #cmap_name = 'blues'
 #cm = LinearSegmentedColormap.from_list(cmap_name, colors, N=10)
+
 
  #OLD VERSION WITHOUT P-VALUES
 for i, source in enumerate(annotation_sources):
@@ -240,18 +360,8 @@ for i, source in enumerate(annotation_sources):
                                          method='linear', resampling='downsample_only')
 
     # Calculate spatial correlation
-    corr_val_mean = neuromaps.stats.compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
+    corr_val_mean = compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
                                            nan_policy='omit')
-
-    # Append to lists
-    corr_vals_mean_list.append(corr_val_mean)
-    corr_values_rand_list.append(corr_values_rand)
-
-    #print("r-Value:", corr_val_mean)
-    #print("p-Value:", pval_mean)
-    #print("Nulls:", corr_nulls_mean)
-
-    #print(f'Correlation value for annotation ({source}) and nulls of the mean image: {corr_nulls_mean}')
 
     # Determine the correct subplot to use
     if num_rows == 1:
@@ -260,12 +370,12 @@ for i, source in enumerate(annotation_sources):
         subplot_ax = axs[row, col]
 
     # Create a histogram for the current map
-    sns.histplot(data=corr_values_rand_list, color=hist_colors[i], edgecolor='black', kde=True,
+    sns.histplot(data=corr_values_rand, color=hist_colors[i], edgecolor='black', kde=True,
                  ax=subplot_ax, legend=False)
     # color=cm(i / len(annotation_sources))
 
     # Plot vertical line for the similarity value
-    #subplot_ax.axvline(corr_val_mean, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
+    subplot_ax.axvline(corr_val_mean, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
 
     # Add p-value as text annotation in the top right part of each histogram
     #subplot_ax.text(0.95, 0.95, f'p = {pval_mean:.3f}', transform=subplot_ax.transAxes, ha='right', va='top',
@@ -290,172 +400,5 @@ legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
 handles, labels = axs[0, 0].get_legend_handles_labels()
 fig.legend(handles, labels, loc='upper right')
 plt.show()
-
-
-
-'''
-#NEW VERSION WITH P-VALUES
-# not working correctly
-
-# Loop through your data and calculate p-values
-for i, source in enumerate(annotation_sources):
-    row = i // num_columns
-    col = i % num_columns
-
-    # Fetch annotation
-    annotation = fetch_annotation(source=source)
-
-    # Resample the original data to match the annotation space
-    data_res, anno_res = resample_images(src=mean_rand_img, trg=annotation,
-                                         src_space='MNI152', trg_space='MNI152',
-                                         method='linear', resampling='downsample_only')
-
-    # Calculate spatial correlation
-    corr_val_mean = neuromaps.stats.compare_images(data_res, anno_res, metric='pearsonr', ignore_zero=True,
-                                                   nan_policy='omit')
-
-    # Generate your null model data (assuming null_model_data is defined)
-    #null_model_data = generate_null_model(data_res)  # Replace generate_null_model with your null model generation function
-    null_model_data = alexander_bloch(data_res, atlas='MNI152', density='3mm', parcellation=None)
-    
-    # Calculate correlation between original data and null model
-    null_corr = np.corrcoef(data_res.ravel(), null_model_data.ravel())[0, 1]
-
-    # Calculate p-value
-    p_value = (np.sum(np.abs(corr_values_rand_list[i]) >= np.abs(corr_val_mean)) + 1) / (len(corr_values_rand_list[i]) + 1)
-
-    # Append to lists
-    corr_vals_mean_list.append(corr_val_mean)
-    pval_mean_list.append(p_value)
-
-    # Determine the correct subplot to use
-    if num_rows == 1:
-        subplot_ax = axs[col]
-    else:
-        subplot_ax = axs[row, col]
-
-    # Create a histogram for the current map
-    sns.histplot(data=corr_values_rand_list[i], color=hist_colors[i], edgecolor='black', kde=True,
-                 ax=subplot_ax, legend=False)
-
-    # Plot vertical line for the similarity value
-    # subplot_ax.axvline(corr_val_mean, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
-
-    # Add p-value as text annotation in the top right part of each histogram
-    subplot_ax.text(0.95, 0.95, f'p = {p_value:.3f}', transform=subplot_ax.transAxes, ha='right', va='top',
-                    bbox=dict(facecolor='white', alpha=0.5))
-
-    subplot_ax.set_xlabel('Spatial Correlation Values')
-    subplot_ax.set_ylabel('Frequency')
-    subplot_ax.set_title(source)
-
-# Remove empty subplots if the number of sources is not a multiple of the number of columns
-for i in range(len(annotation_sources), num_rows * num_columns):
-    fig.delaxes(axs.flatten()[i])
-
-# Set the limits of the x and y axes manually
-# axs[i].axis([0, 1, 0, 1])
-plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
-
-# Add custom legend for the colors
-unique_colors = list(set(hist_colors))  # Get unique colors
-legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
-
-# Create legend handles and labels
-legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
-                  for color, label in zip(unique_colors, legend_labels)]
-
-# Add legend with handles and labels
-#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
-
-# Add custom legend for the similarity value
-handles, labels = axs[0, 0].get_legend_handles_labels()
-fig.legend(handles, labels, loc='upper right')
-plt.show()
-
-
-#NEW VERSION 2 WITH P-VALUES
-# not working correctly
-
-corr_vals_mean_list = []
-pval_mean_list = []
-
-# Loop through your data and calculate p-values
-for i, source in enumerate(annotation_sources):
-    row = i // num_columns
-    col = i % num_columns
-
-    # Fetch annotation
-    annotation = fetch_annotation(source=source)
-
-    # Resample the original data to match the annotation space
-    data_res, anno_res = resample_images(src=mean_rand_img, trg=annotation,
-                                         src_space='MNI152', trg_space='MNI152',
-                                         method='linear', resampling='downsample_only')
-
-    # Calculate spatial correlation
-    corr_val_mean = neuromaps.stats.compare_images(data_res, annotation, metric='pearsonr', ignore_zero=True,
-                                                   nan_policy='omit')
-
-    # Generate your null model data (assuming null_model_data is defined)
-    null_model_data = alexander_bloch(data_res, atlas='MNI152', density='3mm', parcellation=None)
-
-    # Calculate correlation between original data and null model
-    null_corr = np.corrcoef(data_res.ravel(), null_model_data.ravel())[0, 1]
-
-    # Calculate p-value
-    p_value = (np.sum(np.abs(corr_values_rand_list[i]) >= np.abs(corr_val_mean)) + 1) / (len(corr_values_rand_list[i]) + 1)
-
-    # Append to lists
-    corr_vals_mean_list.append(corr_val_mean)
-    pval_mean_list.append(p_value)
-
-    # Determine the correct subplot to use
-    if num_rows == 1:
-        subplot_ax = axs[col]
-    else:
-        subplot_ax = axs[row, col]
-
-    # Create a histogram for the current map
-    sns.histplot(data=corr_values_rand_list[i], color=hist_colors[i], edgecolor='black', kde=True,
-                 ax=subplot_ax, legend=False)
-
-    # Plot vertical line for the similarity value
-    # subplot_ax.axvline(corr_val_mean, color='red', linestyle='dashed', linewidth=2, label='Original r-Value')
-
-    # Add p-value as text annotation in the top right part of each histogram
-    subplot_ax.text(0.95, 0.95, f'p = {p_value:.3f}', transform=subplot_ax.transAxes, ha='right', va='top',
-                    bbox=dict(facecolor='white', alpha=0.5))
-
-    subplot_ax.set_xlabel('Spatial Correlation Values')
-    subplot_ax.set_ylabel('Frequency')
-    subplot_ax.set_title(source)
-
-# Remove empty subplots if the number of sources is not a multiple of the number of columns
-for i in range(len(annotation_sources), num_rows * num_columns):
-    fig.delaxes(axs.flatten()[i])
-
-# Set the limits of the x and y axes manually
-# axs[i].axis([0, 1, 0, 1])
-plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
-
-# Add custom legend for the colors
-unique_colors = list(set(hist_colors))  # Get unique colors
-legend_labels = ['NE', 'D1', 'D2/3', 'DAT', '5-HTT', '5-HTb', '5-HT6']  # Corresponding labels for unique colors
-
-# Create legend handles and labels
-legend_handles = [plt.Rectangle((0, 0), 1, 1, color=color, label=label)
-                  for color, label in zip(unique_colors, legend_labels)]
-
-# Add legend with handles and labels
-#fig.legend(handles=legend_handles, labels=legend_labels, loc='upper right')
-
-# Add custom legend for the similarity value
-handles, labels = axs[0, 0].get_legend_handles_labels()
-fig.legend(handles, labels, loc='upper right')
-plt.show()
-'''
-
-
 
 
