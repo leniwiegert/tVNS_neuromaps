@@ -21,8 +21,8 @@ from scipy.stats import pearsonr
 #-------- LOAD AND PREP DATA --------#
 
 # Define universal data directory
-#data_directory = '/home/leni/Documents/Master/data/'
-data_directory = '/home/neuromadlab/tVNS_project/data/'
+data_directory = '/home/leni/Documents/Master/data/'
+#data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 
@@ -214,8 +214,8 @@ mean_orig_img = nib.load(f'{data_directory}combined_mask.nii.gz')
 #-------- WHOLE-BRAIN MEAN IMAGE PARCELLATION --------#
 
 # Load Nifti brain atlas file
-atlas_directory = '/home/neuromadlab/Tian2020MSA_v1.4/Tian2020MSA/3T/Cortex-Subcortex/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
-#atlas_path = '/home/leni/Tian2020MSA_v1.4/Tian2020MSA/3T/Cortex-Subcortex/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
+#atlas_directory = '/home/neuromadlab/Tian2020MSA_v1.4/Tian2020MSA/3T/Cortex-Subcortex/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
+atlas_path = '/home/leni/Tian2020MSA_v1.4/Tian2020MSA/3T/Cortex-Subcortex/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
 atlas_img = nib.load(atlas_path)
 
 # Initialize Parcellater with the Nifti brain atlas
@@ -312,11 +312,9 @@ np.save(file_path_subcort, corr_values_subcortical_single_maps)
 
 
 
-
+'''
+# Commented out for individual plotting
 ######################  PLOTTING ######################
-
-# SPAGHETTI PLOT for mean image
-# works perfectly, commented out for single subject plotting
 
 # Cortical mean r-values (11 maps)
 print(corr_values_mean_cortical)
@@ -386,8 +384,13 @@ plt.legend(title='Brain Maps', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
 plt.show()
 
+'''
+
 
 ######## PLOTTING - INDIVIDUAL LEVEL ########
+
+'''
+# Error somewhere, cortical values are the same for each plot
 
 x_values = ['Cortical', 'Whole-brain']
 
@@ -420,3 +423,84 @@ for i, (key, value) in enumerate(corr_values_cortical_single_maps.items()):
 
     # Show plot
     plt.show()
+
+'''
+
+
+
+'''
+# works perfectly :)) 
+x_values = ['Cortical', 'Whole-brain']
+
+# Define color categories for participants
+participant_colors = plt.cm.inferno(np.linspace(0, 1, 41))
+
+for i, brain_map in enumerate(brain_maps):
+    plt.figure(figsize=(8, 6))  # Create a new figure for each brain map
+
+    cortical_values = corr_values_cortical_single_maps.get(brain_map, None)
+    subcortical_values = corr_values_subcortical_single_maps.get(brain_map, None)
+
+    # Check if cortical_values or subcortical_values are None or have different lengths
+    if cortical_values is None or subcortical_values is None or len(cortical_values) != 41 or len(subcortical_values) != 41:
+        continue
+
+    for participant_id, color in zip(range(1, 42), participant_colors):
+        cortical_value = cortical_values[participant_id - 1]
+        subcortical_value = subcortical_values[participant_id - 1]
+
+        y_values = np.array([[cortical_value], [subcortical_value]])
+        plt.plot(x_values, y_values, marker='o', color=color, label=f'{participant_id}')
+
+    # Customize subplot
+    plt.title(brain_map)
+    plt.xlabel('Category')
+    plt.ylabel('Correlation Value')
+    plt.grid(True)
+    plt.legend(title='Participant ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Show plot
+    plt.show()
+
+'''
+
+# Plotting try with mean values on top
+
+x_values = ['Cortical', 'Whole-brain']
+
+# Define color categories for participants
+participant_colors = plt.cm.inferno(np.linspace(0, 1, 41))
+
+for i, brain_map in enumerate(brain_maps):
+    plt.figure(figsize=(8, 6))  # Create a new figure for each brain map
+
+    cortical_values = corr_values_cortical_single_maps.get(brain_map, None)
+    subcortical_values = corr_values_subcortical_single_maps.get(brain_map, None)
+
+    # Check if cortical_values or subcortical_values are None or have different lengths
+    if cortical_values is None or subcortical_values is None or len(cortical_values) != 41 or len(subcortical_values) != 41:
+        continue
+
+    # Plot mean correlation values for cortical and subcortical regions
+    plt.plot(x_values, [corr_values_mean_cortical[i], corr_values_mean_subcortical[i]], marker='o', linestyle='-', color='blue', label='Mean')
+
+    for participant_id, color in zip(range(1, 42), participant_colors):
+        cortical_value = cortical_values[participant_id - 1]
+        subcortical_value = subcortical_values[participant_id - 1]
+
+        y_values = np.array([[cortical_value], [subcortical_value]])
+        plt.plot(x_values, y_values, marker='o', color=color, label=f'{participant_id}')
+
+    # Customize subplot
+    plt.title(brain_map)
+    plt.xlabel('Category')
+    plt.ylabel('Correlation Value')
+    plt.grid(True)
+    plt.legend(title='Participant ID', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Show plot
+    plt.show()
+
+
