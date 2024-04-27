@@ -13,7 +13,7 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
 	3.1 Atlas Fetching and Simple Correlations (atlas_fetching.py)
 	3.2 Data Loading, ROI Plotting and Correlation Calculation (Group Level - Whole-Brain - 
 	    No Parcellation - sc_wholebrain_group.py)
- 	3.3 Randomization of the tVNS effect (permutation_tVNS_effect.py)
+ 	3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py)
  	3.4 Bootstrapped Spatial Correlations and Null Models of the rs-FC Maps of tVNS-induced Changes with PET 
  	    Receptor Maps (Group + Ind. Level - Cortical - Parcellation with Schaefer - 
  	    sc_groupind_parc_cortical.py)
@@ -62,7 +62,7 @@ The code for this project has been written in Python and uses several neuroscien
 	- Try different plotting options 
 	- Calculate spatial correlations of the rs-FC maps of tVNS-induced changes with 11 PET receptor maps 
 	  on group and individual level
- 3.3 Randomization of the tVNS effect (permutation_tVNS_effect.py) 
+ 3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py) 
  3.4 Bootstrapped Spatial Correlations and Null Models of the rs-FC Maps of tVNS-induced Changes with PET Receptor Maps 
  (Group + Ind. Level - Cortical - Parcellation with Schaefer - sc_groupind_parc_cortical.py)
 	 - Load and prep data as previously shown 
