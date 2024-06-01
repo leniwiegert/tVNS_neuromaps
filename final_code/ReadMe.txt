@@ -19,9 +19,8 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
  	    sc_groupind_parc_cortical_final.py)
  	3.5 Comparison of Cortical and Subcortical Correlations (Group + Ind. Level - Parcellation
  	    with Schaefer and Tian - sc_groupind_parc_cort_subcort.py)
-  4. Credits
-  
-  
+	3.6 Subnetwork Analysis (Group Level - Cortical - Parcellation with Schaefer - 
+	    subnetworks_parc_cortical.py)
   
  -----------------------------------------------------------------------------------
  
@@ -84,10 +83,10 @@ The code for this project has been written in Python and uses several neuroscien
 		- Parcellation of subcortical images with Tian (Melbourne Subcortical Brain Atlas) 
 		- Calculation of the spatial correlations with 11 PET receptor maps 
 	- Plotting for comparison of cortical and subcortical data
-
- -----------------------------------------------
-
-4. Credits
+3.6 Subnetwork Analysis (subnetworks_parc_cortical.py)
+	- Comparison of the spatial correlations of parcellated cortical maps of tVNS-induced changes
+	  to the same data as parcellated subcortical maps
+	- Analysis based on the 7 subnetworks included in the Schaefer Atlas (Yeo 2011)
 
  -----------------------------------------------------------------------------------
 
