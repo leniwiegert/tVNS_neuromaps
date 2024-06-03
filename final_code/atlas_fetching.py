@@ -4,8 +4,9 @@
 '''
 This code provides an overview on how to fetch brain atlases (annotations, brain maps) from neuromaps.
 In addition to that, it shows the use of spatial null models to test the statistical correlation between two
-brain maps.
+brain maps (whole-brain level) based on teh Alexander-Bloch Null Model.
 '''
+
 
 #--------------- FETCHING ATLASES ----------------#
 
@@ -22,11 +23,6 @@ alarkurtti = datasets.fetch_annotation(source='alarkurtti2015', desc='raclopride
 print(alarkurtti)
 # The NIFTI file of this annotation can now be found in the corresponding folder!
 
-
-
-
-'''
-# not in use
 #--------------- USING SPATIAL NULL MODELS ----------------#
 
 # How to use spatial null models in neuromaps.nulls to test the correlation between two brain annotations
@@ -64,5 +60,3 @@ print(rotated.shape)
 
 corr, pval = stats.compare_images(ding, abagen, nulls=rotated)
 print(f'Correlation: r = {corr:.02f}, p = {pval:.04f}')
-'''
-
