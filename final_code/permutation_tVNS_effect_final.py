@@ -5,7 +5,7 @@
 This method involves testing the effects of tVNS on brain activity at a group level by randomizing the algebraic sign
 of individual maps of tVNS-induced changes to create a permutation design that preserves spatial data structure.
 The average of these randomized maps is then correlated with receptor distribution maps, and the results are compared
-to the original non-randomized spatial correlations to assess significance.
+to the original non-randomized spatial correlations to assess significance (Thesis Figure 2A).
 '''
 
 import neuromaps
