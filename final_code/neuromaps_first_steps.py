@@ -1,4 +1,5 @@
 # Author: Lena Wiegert
+# This code is part of the Master Thesis "Placing the Effects of tVNS into Neurobiological Context"
 
 # --------------------- NEUROMAPS INSTALLATION --------------------- #
 
