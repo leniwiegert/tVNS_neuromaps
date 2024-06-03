@@ -1,16 +1,20 @@
 # Author: Lena Wiegert
 # This code is part of the Master Thesis "Placing the Effects of tVNS into Neurobiological Context"
 
+'''
+This code explains the installation of the connectome workbench and neuromaps.
+'''
+
+
 # --------------------- NEUROMAPS INSTALLATION --------------------- #
 
 # This package requires Python 3.7+
-# Add my version + extra environment
 
 # --- Connectome Workbench ---
 # Download connectome workbench: https://www.humanconnectome.org/software/get-connectome-workbench
 
 # -- Windows/Linux:
-# Follow the steps in README.txt
+# Follow the steps in README.txt of the human connectome workbench
 
 # -- For macOS --
 # Check shell with:
@@ -46,12 +50,3 @@ git commit -m "New commit"
 # Push changes to GitHub:
 git push origin master
 '''
-
-#--------------------- FETCHING ATLASES AND ANNOTATIONS ---------------------  #
-
-# example for fetching atlases from neuromaps:
-from neuromaps import datasets
-# general function: neuromaps.datasets.fetch_atlas()
-fslr = datasets.fetch_atlas(atlas='fslr', density='32k')
-
-
