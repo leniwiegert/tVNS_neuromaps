@@ -1,5 +1,13 @@
 # AUTHOR: Lena Wiegert
-# Permutation of the tVNS effect
+# This code is part of the Master Thesis "Placing the Effects of tVNS into Neurobiological Context"
+
+'''
+This method involves testing the effects of tVNS on brain activity at a group level by randomizing the algebraic sign
+of individual maps of tVNS-induced changes to create a permutation design that preserves spatial data structure.
+The average of these randomized maps is then correlated with receptor distribution maps, and the results are compared
+to the original non-randomized spatial correlations to assess significance.
+'''
+
 import neuromaps
 import numpy as np
 import seaborn as sns
@@ -13,6 +21,7 @@ import matplotlib.pyplot as plt
 from nilearn.image import resample_img
 from scipy.stats import percentileofscore, pearsonr, ttest_1samp
 
+
 # -------- PREPARE DATA --------#
 
 # Directory containing the volume files
@@ -23,7 +32,6 @@ data_directory = '/home/leni/Documents/Master/data/'
 annotation_sources = ['ding2010', 'hesse2017', 'kaller2017', 'alarkurtti2015', 'jaworska2020', 'sandiego2015',
                       'smith2017', 'sasaki2012', 'fazio2016', 'gallezot2010', 'radnakrishnan2018']
 
-
 # List of volume files in the directory
 volume_files = [f for f in os.listdir(data_directory) if f.startswith('volume_') and f.endswith('.nii')]
 
@@ -31,13 +39,11 @@ volume_files = [f for f in os.listdir(data_directory) if f.startswith('volume_')
 gray_matter_mask_file = os.path.join(data_directory, 'out_GM_p_0_15.nii')
 gray_matter_mask = nib.load(gray_matter_mask_file)
 
+
 #-------- GRAY MATTER MASK --------#
 
 # Create an empty dictionary to store the non_rand mask data for each volume
 non_rand_mask_data_dict = {}
-
-# Create an empty dictionary to store randomized data arrays for each volume
-#rand_data_arrays_gm = {}
 
 # Iterate over each volume file
 for volume_file in volume_files:
@@ -47,10 +53,6 @@ for volume_file in volume_files:
 
     # Resample gray matter mask to match the resolution of the volume image
     gray_matter_mask_resampled = nli.resample_to_img(gray_matter_mask, img)
-
-    # Ensure both masks have the same shape
-    #if not np.all(gray_matter_mask_resampled.shape == img.shape):
-    #    raise ValueError('Shape of input volume is incompatible.')
 
     # Create a new mask by keeping only non-NaN values in both masks
     non_rand_mask_data = np.where(np.isnan(img.get_fdata()), gray_matter_mask_resampled.get_fdata(), img.get_fdata())
@@ -72,7 +74,6 @@ for volume_file in volume_files:
     # Optionally, save the randomized mask data as a NIfTI file
     #rand_mask_img = nib.Nifti1Image(rand_mask_data.astype(np.float32), img.affine)
     #rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_rand_mask.nii.gz')
-
 
 
 # -------- SPATIAL CORRELATION - ORIGINAL MEAN IMAGE --------#
@@ -112,7 +113,7 @@ print(correlation_results_orig)
 permuted_correlation_results = {brain_map: [] for brain_map in annotation_sources}
 
 # Iterate 1000 times for permutation
-for _ in range(2): # Desired number of permutations
+for _ in range(1000): # Desired number of permutations
     print(f"Iteration {_ + 1} of 1000")
     # Initialize a list to store correlation values for this permutation
     permutation_corr_values = []
@@ -152,6 +153,7 @@ for _ in range(2): # Desired number of permutations
     for brain_map, corr_value in zip(annotation_sources, permutation_corr_values):
         permuted_correlation_results[brain_map].append(corr_value)
 
+
 #------------- SIGNIFICANCE TESTING ------------#
 
 # Initialize a dictionary to store p-values for each brain map
@@ -180,12 +182,10 @@ print(p_values)
 
 # Manually define colors for each histogram
 hist_colors = ['blue', 'blue', 'olive', 'green', 'green', 'green', 'green', 'cyan', 'red', 'orange', 'yellow']
-
-# Define the number of columns you want
+# Define the number of columns
 num_columns = 2
-
 # Calculate the number of rows based on the number of annotation sources and the number of columns
-num_rows = -(-len(annotation_sources) // num_columns)  # Ceiling division to ensure all items are shown
+num_rows = -(-len(annotation_sources) // num_columns)
 
 # All histograms in one figure
 fig, axs = plt.subplots(num_rows, num_columns, figsize=(12, 12), sharex=False, sharey=False)
@@ -217,6 +217,11 @@ for i, source in enumerate(annotation_sources):
                     verticalalignment='top', horizontalalignment='right')
 
 # Set the limits of the x and y axes manually
-plt.subplots_adjust(wspace=0.3, hspace=3)  # adds twice the default space between the plots
+plt.subplots_adjust(wspace=0.3, hspace=3)
+
+# Remove any extra subplots (if there are any left unused)
+for j in range(i + 1, num_rows * num_columns):
+    fig.delaxes(axs.flatten()[j])
 
 plt.show()
+
