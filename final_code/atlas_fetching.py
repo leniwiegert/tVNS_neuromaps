@@ -1,5 +1,5 @@
-# Fetching atlases and using spatial null models (test file)
 # Author: Lena Wiegert
+# This code is part of the Master Thesis "Placing the Effects of tVNS into Neurobiological Context"
 
 '''
 This code provides an overview on how to fetch brain atlases (annotations, brain maps) from neuromaps.
