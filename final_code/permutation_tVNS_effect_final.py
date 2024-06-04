@@ -5,7 +5,7 @@
 This method involves testing the effects of tVNS on brain activity at a group level by randomizing the algebraic sign
 of individual maps of tVNS-induced changes to create a permutation design that preserves spatial data structure.
 The average of these randomized maps is then correlated with receptor distribution maps, and the results are compared
-to the original non-randomized spatial correlations to assess significance (Thesis Figure 2A).
+to the original non-randomized spatial correlations to assess significance.
 '''
 
 import neuromaps
@@ -25,8 +25,8 @@ from scipy.stats import percentileofscore, pearsonr, ttest_1samp
 # -------- PREPARE DATA --------#
 
 # Directory containing the volume files
-data_directory = '/home/leni/Documents/Master/data/'
-# data_directory = '/home/neuromadlab/tVNS_project/data/'
+# data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/' # Data directory for Cuneus
 
 # List of brain maps to calculate correlations with
 annotation_sources = ['ding2010', 'hesse2017', 'kaller2017', 'alarkurtti2015', 'jaworska2020', 'sandiego2015',
@@ -76,13 +76,13 @@ for volume_file in volume_files:
     #rand_mask_img.to_filename(f'/Users/leni/Documents/Master/Data/{volume_file}_rand_mask.nii.gz')
 
 
-# -------- SPATIAL CORRELATION - ORIGINAL MEAN IMAGE --------#
+# -------- SPATIAL CORRELATION - ORIGINAL GROUP IMAGE --------#
 
-# Load the original mean image
-mean_orig_img = os.path.join(data_directory, 'combined_mask.nii.gz')
-mean_orig_img = nib.load(mean_orig_img)
-mean_orig_data = mean_orig_img.get_fdata()
-affine_matrix = mean_orig_img.affine
+# Load the original group image
+group_orig_img = os.path.join(data_directory, 'combined_mask.nii.gz')
+group_orig_img = nib.load(group_orig_img)
+group_orig_data = group_orig_img.get_fdata()
+affine_matrix = group_orig_img.affine
 
 # Initialize a dictionary to store correlation values for each brain map
 correlation_results_orig = {}
@@ -92,12 +92,12 @@ for brain_map in annotation_sources:
     # Fetch the desired annotation
     anno = fetch_annotation(source=brain_map)
 
-    # Resample the original mean data to match the annotation space
-    data_res_orig, anno_res = resample_images(src=mean_orig_img, trg=anno,
+    # Resample the original group data to match the annotation space
+    data_res_orig, anno_res = resample_images(src=group_orig_img, trg=anno,
                                               src_space='MNI152', trg_space='MNI152',
                                               method='linear', resampling='downsample_only')
 
-    # Compare resampled original mean data with the brain map annotation using the compare_images function
+    # Compare resampled original group data with the brain map annotation using the compare_images function
     corr_orig = compare_images(data_res_orig, anno_res, metric='pearsonr')
 
     # Store the correlation value
@@ -105,9 +105,9 @@ for brain_map in annotation_sources:
 print(correlation_results_orig)
 
 
-# -------- SPATIAL CORRELATION - RANDOMIZED MEAN IMAGE --------#
+# -------- SPATIAL CORRELATION - RANDOMIZED GROUP IMAGE --------#
 
-# Spatial correlations of the randomized mean image with 11 maps with permutation
+# Spatial correlations of the randomized group image with 11 maps with permutation
 
 # Initialize a dictionary to store correlation values for each brain map and each permutation
 permuted_correlation_results = {brain_map: [] for brain_map in annotation_sources}
@@ -127,23 +127,23 @@ for _ in range(1000): # Desired number of permutations
         randomized_data = volume_data * random_multipliers[key]
         randomized_data_list.append(randomized_data)
 
-    # Compute the mean of the randomized data along the first axis (axis=0)
-    mean_rand_data = np.mean(randomized_data_list, axis=0)
+    # Compute the group of the randomized data along the first axis (axis=0)
+    group_rand_data = np.group(randomized_data_list, axis=0)
 
-    # Create a new NIfTI image with the mean data
-    mean_rand_img = nib.Nifti1Image(mean_rand_data, affine_matrix)
+    # Create a new NIfTI image with the group data
+    group_rand_img = nib.Nifti1Image(group_rand_data, affine_matrix)
 
-    # Compute the spatial correlation between the mean randomized data and each brain map annotation
+    # Compute the spatial correlation between the group randomized data and each brain map annotation
     for brain_map in annotation_sources:
         # Fetch the desired annotation
         anno = fetch_annotation(source=brain_map)
 
-        # Resample the mean randomized data to match the annotation space
-        data_res_rand, anno_res = resample_images(src=mean_rand_img, trg=anno,
+        # Resample the group randomized data to match the annotation space
+        data_res_rand, anno_res = resample_images(src=group_rand_img, trg=anno,
                                                   src_space='MNI152', trg_space='MNI152',
                                                   method='linear', resampling='downsample_only')
 
-        # Compute the correlation between the resampled mean randomized data and the brain map annotation
+        # Compute the correlation between the resampled group randomized data and the brain map annotation
         corr_rand = compare_images(data_res_rand, anno_res, metric='pearsonr')
 
         # Store the correlation value
@@ -218,10 +218,22 @@ for i, source in enumerate(annotation_sources):
 
 # Set the limits of the x and y axes manually
 plt.subplots_adjust(wspace=0.3, hspace=3)
+# Add a title to the entire figure
+fig.suptitle('Correlations of whole-brain maps of tVNS-induced changes and receptor maps on group level', fontsize=20)
 
 # Remove any extra subplots (if there are any left unused)
 for j in range(i + 1, num_rows * num_columns):
     fig.delaxes(axs.flatten()[j])
 
 plt.show()
+
+
+#------------- SAVE FIGURE ------------#
+
+# Define the filename for the figure
+figure_filename = 'whole_brain__group_1000perms_final.png'
+# Construct the full file path
+figure_path = os.path.join(data_directory, figure_filename)
+# Save the figure
+fig.savefig(figure_path, dpi=300, bbox_inches='tight')
 
