@@ -33,8 +33,8 @@ print(os.environ['PATH'])
 #-------- LOAD AND PREP DATA --------#
 
 # Define universal data directory
-data_directory = '/home/leni/Documents/Master/data/'
-#data_directory = '/home/neuromadlab/tVNS_project/data/'
+#data_directory = '/home/leni/Documents/Master/data/'
+data_directory = '/home/neuromadlab/tVNS_project/data/'
 
 img = nib.load(os.path.join(data_directory, '4D_rs_fCONF_del_taVNS_sham.nii'))
 
