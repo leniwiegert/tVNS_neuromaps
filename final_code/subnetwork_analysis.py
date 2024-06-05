@@ -246,6 +246,11 @@ plt.yticks(fontsize=12)
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
 
+# Save the figures
+fig_path = os.path.join(data_directory, 'cortical_subcortical_roi_dopamine.png')
+plt.savefig(fig_path)
+plt.show()
+
 
 #-------- SUBNETWORK ANALYSIS --------#
 
@@ -357,5 +362,10 @@ plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+
+# Save the subnetwork plot
+fig_path = os.path.join(data_directory, 'subnetworks_cortical_roi_dopamine.png')
+plt.savefig(fig_path)
 plt.show()
 
