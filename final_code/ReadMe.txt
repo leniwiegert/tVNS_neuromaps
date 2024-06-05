@@ -12,24 +12,22 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
 3. User Guide
 	3.1 Atlas Fetching and Simple Correlations (atlas_fetching.py)
 	3.2 Data Loading, ROI Plotting and Correlation Calculation (Group Level - Whole-Brain - 
-	    No Parcellation - sc_wholebrain_group_final.py)
- 	3.3 Randomization of the tVNS effect (permutation_tVNS_effect.py)
+	    No Parcellation - data_prep_final.py)
+ 	3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py)
  	3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET
- 	    Receptor Maps (Group + Ind. Level - Cortical - Parcellation with Schaefer - 
- 	    sc_groupind_parc_cortical_final.py)
- 	3.5 Comparison of Cortical and Subcortical Correlations (Group + Ind. Level - Parcellation
- 	    with Schaefer and Tian - sc_groupind_parc_cort_subcort.py)
-	3.6 Subnetwork Analysis (Group Level - Cortical - Parcellation with Schaefer - 
-	    subnetworks_parc_cortical.py)
+ 	    Receptor Maps (sc_groupind_parc_cortical_final.py)
+ 	3.5 Comparison of Cortical and Subcortical Correlations 
+	    (sc_groupind_parc_cort_subcort.py)
+	3.6 ROI-based comparison of Cortical and Subcortical Datasets + Subnetwork Analysis 
+	    (subnetworks_parc_cortical.py)
   
  -----------------------------------------------------------------------------------
  
 - Code Overview -
 
 1. Project Description:
-	
-This project investigates the neurobiological mechanisms underlying the effects of non-invasive transcutaneous Vagus Nerve Stimulation (tVNS). Using functional magnetic resonance imaging (fMRI) data and advanced analytical techniques, the study aims to uncover associations between tVNS-induced brain responses and neurobiological factors, such as receptor density patterns. By exploring individual patterns of brain response to tVNS compared to group-level data, we aim to elucidate heterogeneity in tVNS responses and seek to advance our understanding of tVNS as a potential therapeutic intervention.
-The code for this project has been written in Python and uses several neuroscientific toolboxes, with a focus on a recently developed open-source toolbox called Neuromaps. Overall, the code aims to statistically compare the resting-state functional connectivity brain maps of tVNS-induced changes to PET receptor density maps on individual and group level. 
+
+This project explores the neurobiological mechanisms underlying the effects of non-invasive transcutaneous Vagus Nerve Stimulation (tVNS). Using fMRI data and advanced analytical techniques, the study aims to uncover associations between tVNS-induced brain responses and neurobiological factors, such as receptor density patterns. The open-access toolbox Neuromaps for accessing, transforming, and analyzing structural brain maps (Markello et al., 2022) is employed and neurobiological receptor distribution data from in-vivo Positron Emission Tomography (PET) maps from the Neuromaps database are used. By examining individual patterns of brain response to tVNS compared to group-level data, we aim to elucidate heterogeneity in tVNS responses and advance the understanding of tVNS as a potential therapeutic intervention. The project code, written in Python, statistically compares brain maps of tVNS-induced changes to PET receptor density maps at both individual and group levels.
 
  -----------------------------------------------
 
@@ -40,9 +38,11 @@ The code for this project has been written in Python and uses several neuroscien
 - Create environment and download neuromaps by following the installation steps in the documentation: 	
   https://neuromaps.readthedocs.io/en/latest/installation.html
 2.2 Downloads
-- Download the following data files from the NAS:
-	- maps of tVNS-induced changes (4D_rs_fCONF_del_taVNS_sham.nii)
-	- Group level image with GM mask (combined_mask.nii.gz)
+- Download the following data files from the HippocampNAS:
+  Data files 1 and 2 can also be found in their original NAS folders, but for simplification they were
+  uploaded in this project's folder: /TUE_general/Projects/Thesis_work/LenaWiegert/Data_LW
+	- maps of tVNS-induced changes (4D_rs_fCONF_del_taVNS_sham.nii) - collected by Teckentrup et al. (2021)
+	- Group level image with GM mask (combined_mask.nii.gz) 
 	- Individual level images without GM mask (volume_1.nii to volume_41.nii)
 	
  -----------------------------------------------
