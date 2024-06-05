@@ -1,8 +1,8 @@
 '''
 @author: Lena Wiegert
 
-This code transforms MNI152 data to fsLR space and parcellates it with the Schaefer atlas.
-It further visualizes the significance of the spatial correlations on group level for cortical data.
+This code transforms MNI152 data to fsLR space and parcellates it with the Human Cerebral Cortex Atlas (Schaefer2018).
+It further visualizes the significance of the spatial correlations on group level, using the Alexander-Bloch Null Model.
 '''
 
 
