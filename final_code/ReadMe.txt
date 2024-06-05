@@ -13,11 +13,13 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
 	3.1 Atlas Fetching and Simple Correlations (atlas_fetching.py)
 	3.2 Data Loading, ROI Plotting and Correlation Calculation (data_prep_final.py)
  	3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py)
- 	3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET
- 	    Receptor Maps (sc_groupind_parc_cortical_final.py)
-	3.5 ROI-based comparison of Cortical and Subcortical Datasets + Subnetwork Analysis 
+	3.4  Spatial Null Models of the Maps of tVNS-induced Changes with PET
+ 	    Receptor Maps - Group Level (cortical_nulls_final.py)
+ 	3.5 Spatial Null Models of the Maps of tVNS-induced Changes with PET
+ 	    Receptor Maps - Individual Level (sc_groupind_parc_cortical_final.py)
+	3.6 ROI-based comparison of Cortical and Subcortical Datasets + Subnetwork Analysis 
 	    (subnetworks_parc_cortical.py)
- 	3.6 Comparison of Cortical and Subcortical Correlations 
+ 	3.7 Comparison of Cortical and Subcortical Correlations 
 	    (sc_groupind_parc_cort_subcort.py)
   
  -----------------------------------------------------------------------------------
@@ -70,26 +72,32 @@ This project explores the neurobiological mechanisms underlying the effects of n
 	- Calculate the spatial correlations of the randomized maps with the receptor maps, permute 1000 times
 	- Plot and compare to the non-randomized (original) correlation value
 
-B??
+ 3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET Receptor Maps - Group Level
+     (cortical_nulls_final.py) (B)
+	- Load and prep data as previously shown 
+	- Transform whole-brain data and receptor maps (annotations) from MNI152 (volumetric) to fsLR (surface-based) space
+	- Parcellate data and annotation with Schaefer2018 (Human Cerebral Cortex Atlas) 
+	- Calculate nulls and spatial correlations for the maps of tVNS-induced changes with PET receptor maps 
+	  for noradrenaline, dopamine and serotonin
 
- 3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET Receptor Maps 
-    (sc_groupind_parc_cortical_final.py) (B + C) 
+ 3.5 Spatial Null Models of the Maps of tVNS-induced Changes with PET Receptor Maps - Individual Level
+    (sc_groupind_parc_cortical_final.py) (C) 
 	- Load and prep data as previously shown 
 	- Transform whole-brain data and receptor maps (annotations) from MNI152 (volumetric) to fsLR (surface-based) space
 	- Parcellate data and annotation with Schaefer2018 (Human Cerebral Cortex Atlas) 
 	- Group Level: Calculate nulls and spatial correlations for the maps of tVNS-induced changes with 
-	  PET receptor maps for noradrenaline, dopamine and serotonin
+	  PET receptor maps for noradrenaline, dopamine and serotonin (as shown in the previous file)
 	- Individual Level: Same as on group level
 	- Heatmap plotting on individual level for each receptor group
 
-3.5 Subnetwork Analysis (subnetworks_parc_cortical.py) (D)
+3.6 Subnetwork Analysis (subnetworks_parc_cortical.py) (D)
 	- Load and prep data as previously shown 
 	- Parcellation on cortical and subcortical level
 	- ROI-based comparison of the spatial correlations of parcellated cortical maps of tVNS-induced changes
 	  to the same data as parcellated subcortical maps on ROI-basis (group level)
 	- Analysis based on the 7 subnetworks included in the Schaefer Atlas (Yeo 2011)
 
-3.6 Comparison of Cortical and Subcortical Results (sc_groupind_parc_cort_subcort.py) (E)
+3.7 Comparison of Cortical and Subcortical Results (sc_groupind_parc_cort_subcort.py) (E)
 	- Download Melbourne Subcortical Brain Atlas (Ye Tian): 
 	https://www.nitrc.org/frs/download.php/13364/Tian2020MSA_v1.4.zip
 	- Define your atlas_directory (line 221)
@@ -105,8 +113,10 @@ B??
 
  -----------------------------------------------------------------------------------
 
+4. Credits:
 
-
-
+This code was written by Lena Wiegert under supervision of Corinna Schulz and Dr. Anne Kühnel
+within the neuroMADLAB (Neuroscience of Motivation, Action, and Desire Laboratory, Department 
+of Psychiatry & Psychotherapy, University of Bonn & Tübingen). 
 
 
