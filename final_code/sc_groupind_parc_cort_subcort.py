@@ -218,9 +218,8 @@ group_orig_img = nib.load(f'{data_directory}combined_mask.nii.gz')
 #-------- SUBCORTICAL group IMAGE PARCELLATION --------#
 
 # Load Nifti brain atlas file
-#atlas_directory = '/home/neuromadlab/Tian2020MSA_v1.4/Tian2020MSA/3T/Cortex-Subcortex/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
+atlas_directory = '/home/neuromadlab/Tian2020MSA_v1.4/Tian2020MSA/3T/Cortex-Subcortex/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
 #atlas_path = '/home/leni/Tian2020MSA_v1.4/Tian2020MSA/3T/Subcortex-Only/MNIvolumetric/Schaefer2018_400Parcels_7Networks_order_Tian_Subcortex_S4_3T_MNI152NLin2009cAsym_2mm.nii.gz'
-atlas_path = '/home/leni/Tian2020MSA_v1.4/Tian2020MSA/3T/Subcortex-Only/Tian_Subcortex_S4_3T.nii'
 atlas_img = nib.load(atlas_path)
 
 # Initialize Parcellater with the Nifti brain atlas
