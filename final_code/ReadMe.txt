@@ -28,7 +28,15 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
 
 1. Project Description:
 
-This project explores the neurobiological mechanisms underlying the effects of non-invasive transcutaneous Vagus Nerve Stimulation (tVNS). Using fMRI data and advanced analytical techniques, the study aims to uncover associations between tVNS-induced brain responses and neurobiological factors, such as receptor density patterns. The open-access toolbox Neuromaps for accessing, transforming, and analyzing structural brain maps (Markello et al., 2022) is employed and neurobiological receptor distribution data from in-vivo Positron Emission Tomography (PET) maps from the Neuromaps database are used. By examining individual patterns of brain response to tVNS compared to group-level data, we aim to elucidate heterogeneity in tVNS responses and advance the understanding of tVNS as a potential therapeutic intervention. The project code, written in Python, statistically compares brain maps of tVNS-induced changes to PET receptor density maps at both individual and group levels.
+This project explores the neurobiological mechanisms underlying the effects of non-invasive transcutaneous Vagus Nerve 
+Stimulation (tVNS). Using fMRI data and advanced analytical techniques, the study aims to uncover associations between 
+tVNS-induced brain responses and neurobiological factors, such as receptor density patterns. The open-access toolbox 
+Neuromaps for accessing, transforming, and analyzing structural brain maps (Markello et al., 2022) is employed and 
+neurobiological receptor distribution data from in-vivo Positron Emission Tomography (PET) maps from the Neuromaps 
+database are used. By examining individual patterns of brain response to tVNS compared to group-level data, we aim to 
+elucidate heterogeneity in tVNS responses and advance the understanding of tVNS as a potential therapeutic intervention. 
+The project code, written in Python, statistically compares brain maps of tVNS-induced changes to PET receptor density 
+maps at both individual and group levels.
 
  -----------------------------------------------
 
