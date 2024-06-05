@@ -15,10 +15,10 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
  	3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py)
  	3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET
  	    Receptor Maps (sc_groupind_parc_cortical_final.py)
- 	3.5 Comparison of Cortical and Subcortical Correlations 
-	    (sc_groupind_parc_cort_subcort.py)
-	3.6 ROI-based comparison of Cortical and Subcortical Datasets + Subnetwork Analysis 
+	3.5 ROI-based comparison of Cortical and Subcortical Datasets + Subnetwork Analysis 
 	    (subnetworks_parc_cortical.py)
+ 	3.6 Comparison of Cortical and Subcortical Correlations 
+	    (sc_groupind_parc_cort_subcort.py)
   
  -----------------------------------------------------------------------------------
  
@@ -82,23 +82,26 @@ B??
 	- Individual Level: Same as on group level
 	- Heatmap plotting on individual level for each receptor group
 
-3.5 Comparison of Cortical and Subcortical Correlations (sc_groupind_parc_cort_subcort.py)
+3.5 Subnetwork Analysis (subnetworks_parc_cortical.py) (D)
+	- Load and prep data as previously shown 
+	- Parcellation on cortical and subcortical level
+	- ROI-based comparison of the spatial correlations of parcellated cortical maps of tVNS-induced changes
+	  to the same data as parcellated subcortical maps on ROI-basis (group level)
+	- Analysis based on the 7 subnetworks included in the Schaefer Atlas (Yeo 2011)
+
+3.6 Comparison of Cortical and Subcortical Results (sc_groupind_parc_cort_subcort.py) (E)
 	- Download Melbourne Subcortical Brain Atlas (Ye Tian): 
 	https://www.nitrc.org/frs/download.php/13364/Tian2020MSA_v1.4.zip
-	- Define your atlas_directory (line 217)
+	- Define your atlas_directory (line 221)
 	- Load and prep data as previously shown 
 	- Cortical data (group + individual):
-		- Transformation and parcellation of cortical images with Schaefer (load data instead and remove 
-	 	  parcellation part)
+		- Transformation and parcellation of cortical images with Schaefer2018
 		- Calculation of the spatial correlations with 11 PET receptor maps 
 	- Subcortical images (group + individual):
-		- Parcellation of subcortical images with Tian (Melbourne Subcortical Brain Atlas) 
+		- Parcellation of subcortical images with Tian2020 (Melbourne Subcortical Brain Atlas) 
 		- Calculation of the spatial correlations with 11 PET receptor maps 
-	- Plotting for comparison of cortical and subcortical data
-3.6 Subnetwork Analysis (subnetworks_parc_cortical.py)
-	- Comparison of the spatial correlations of parcellated cortical maps of tVNS-induced changes
-	  to the same data as parcellated subcortical maps
-	- Analysis based on the 7 subnetworks included in the Schaefer Atlas (Yeo 2011)
+	- Plotting for comparison of cortical and subcortical data on group and individual level
+
 
  -----------------------------------------------------------------------------------
 
