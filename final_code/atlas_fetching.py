@@ -4,7 +4,7 @@
 '''
 This code provides an overview on how to fetch brain atlases (annotations, brain maps) from neuromaps.
 In addition to that, it shows the use of spatial null models to test the statistical correlation between two
-brain maps (whole-brain level) based on teh Alexander-Bloch Null Model.
+brain maps (whole-brain level) based on the Alexander-Bloch Null Model.
 '''
 
 
