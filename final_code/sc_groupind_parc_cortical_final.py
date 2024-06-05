@@ -402,7 +402,7 @@ for i in range(num_plots, num_cols * num_rows):
 # Adjust layout to prevent overlapping and increase space between rows
 plt.tight_layout(pad=12.0)  # Adjust padding for better layout
 
-plt.suptitle('Bootstrapped correlations of tVNS-induced changes in rs-FC and receptor maps (individual level)', fontsize=20, fontweight='bold', y=1.1)
+plt.suptitle('Correlations of cortical maps of tVNS-induced changes and dopamine receptor maps (individual level)', fontsize=20, fontweight='bold', y=1.1)
 # Save the plot as an image
 plt.savefig('heatmap_combined.png')
 
