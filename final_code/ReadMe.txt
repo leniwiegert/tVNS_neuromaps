@@ -41,16 +41,19 @@ This project explores the neurobiological mechanisms underlying the effects of n
 - Download the following data files from the HippocampNAS:
   Data files 1 and 2 can also be found in their original NAS folders, but for simplification they were
   uploaded in this project's folder: /TUE_general/Projects/Thesis_work/LenaWiegert/Data_LW
-	- maps of tVNS-induced changes (4D_rs_fCONF_del_taVNS_sham.nii) - collected by Teckentrup et al. (2021)
-	- Group level image with GM mask (combined_mask.nii.gz) 
-	- Individual level images without GM mask (volume_1.nii to volume_41.nii)
+	1) Maps of tVNS-induced changes (4D_rs_fCONF_del_taVNS_sham.nii) - collected by Teckentrup et al. (2021)
+	2) Gray matter mask (out_GM_p_0_15.nii) - from our group 
+	3) Group level image with GM mask (combined_mask.nii.gz) 
+	4) Individual datasets without GM mask (volume_1.nii to volume_41.nii) 
 	
  -----------------------------------------------
 	
 3. User Guide:
 3.1 Atlas Fetching and Simple Correlations (atlas_fetching.py)
-	- Check out currently available files of Neuromaps 
-	- Example for D2 receptor map
+	- This code provides an overview on how to fetch brain atlases (annotations, brain maps) from neuromaps
+	- Further, it shows the use of spatial null models to test the statistical correlation between two
+	  brain maps (whole-brain level) based on the Alexander-Bloch Null Model
+
 3.2 Data Loading, ROI Plotting and Correlation Calculation (sc_wholebrain_group_final.py)
 	- Load tVNS data and check out its properties (header, affine, ...)
 	- Create and load seperate files for single subject data (individual data of each participant, 
