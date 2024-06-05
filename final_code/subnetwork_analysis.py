@@ -246,7 +246,7 @@ plt.yticks(fontsize=12)
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
 
-# Save the figures
+# Save the figure
 fig_path = os.path.join(data_directory, 'cortical_subcortical_roi_dopamine.png')
 plt.savefig(fig_path)
 plt.show()
