@@ -73,17 +73,16 @@ This project explores the neurobiological mechanisms underlying the effects of n
 B??
 
  3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET Receptor Maps 
-    (sc_groupind_parc_cortical_final.py) (C) 
-	 - Load and prep data as previously shown 
-	 - Transform data and annotation from MNI152 (volumetric) to fsLR (surface-based) space
+    (sc_groupind_parc_cortical_final.py) (B + C) 
+	- Load and prep data as previously shown 
+	- Transform whole-brain data and receptor maps (annotations) from MNI152 (volumetric) to fsLR (surface-based) space
 	- Parcellate data and annotation with Schaefer2018 (Human Cerebral Cortex Atlas) 
 	- Group Level: Calculate nulls and spatial correlations for the maps of tVNS-induced changes with 
 	  PET receptor maps for noradrenaline, dopamine and serotonin
 	- Individual Level: Same as on group level
-	- Heatmap plotting on individual level
+	- Heatmap plotting on individual level for each receptor group
 
-3.5 Comparison of Cortical and Subcortical Correlations 
-(Group + Ind. Level - Parcellation with Schaefer and Tian - sc_groupind_parc_cort_subcort.py)
+3.5 Comparison of Cortical and Subcortical Correlations (sc_groupind_parc_cort_subcort.py)
 	- Download Melbourne Subcortical Brain Atlas (Ye Tian): 
 	https://www.nitrc.org/frs/download.php/13364/Tian2020MSA_v1.4.zip
 	- Define your atlas_directory (line 217)
