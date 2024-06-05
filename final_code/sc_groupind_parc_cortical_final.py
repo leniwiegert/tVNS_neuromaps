@@ -3,10 +3,10 @@
 
 '''
 Ths code creates spatial null models of the cortical maps of tVNS-induced changes in relation to receptor maps on group
-and individual level (Figure 2B). The whole-brain data and the receptor maps (annotations) are transformed to surface-based space
+and individual level (Figure 2B and C). The whole-brain data and the receptor maps (annotations) are transformed to surface-based space
 (fsLR) and parcellated with the Human Cerebral Cortex Atlas (Schaefer2018). The spatial correlation between tVNS-induced
 changes and receptor maps were calculated and plotted with the spatial nulls (based on the Alexander-Bloch Null Model)
-in heatmaps on group and individual level.
+in heatmaps on individual level.
 '''
 
 
