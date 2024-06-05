@@ -11,8 +11,7 @@ Placing the Effects of Transcutaneous Vagus Nerve Stimulation into Neurobiologic
 	2.2 Downloads
 3. User Guide
 	3.1 Atlas Fetching and Simple Correlations (atlas_fetching.py)
-	3.2 Data Loading, ROI Plotting and Correlation Calculation (Group Level - Whole-Brain - 
-	    No Parcellation - data_prep_final.py)
+	3.2 Data Loading, ROI Plotting and Correlation Calculation (data_prep_final.py)
  	3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py)
  	3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET
  	    Receptor Maps (sc_groupind_parc_cortical_final.py)
@@ -32,11 +31,13 @@ This project explores the neurobiological mechanisms underlying the effects of n
  -----------------------------------------------
 
 2. Installation and Set Up:
+
 2.1 Toolbox Installation (neuromaps_first_steps.py)
 - Download connectome workbench: 
   https://www.humanconnectome.org/software/get-connectome-workbench)
 - Create environment and download neuromaps by following the installation steps in the documentation: 	
   https://neuromaps.readthedocs.io/en/latest/installation.html
+
 2.2 Downloads
 - Download the following data files from the HippocampNAS:
   Data files 1 and 2 can also be found in their original NAS folders, but for simplification they were
@@ -49,29 +50,38 @@ This project explores the neurobiological mechanisms underlying the effects of n
  -----------------------------------------------
 	
 3. User Guide:
+
 3.1 Atlas Fetching and Simple Correlations (atlas_fetching.py)
-	- This code provides an overview on how to fetch brain atlases (annotations, brain maps) from neuromaps
-	- Further, it shows the use of spatial null models to test the statistical correlation between two
+	- Overview on how to fetch brain atlases (annotations, brain maps) from neuromaps
+	- First try of spatial null models to test the statistical correlation between two
 	  brain maps (whole-brain level) based on the Alexander-Bloch Null Model
 
-3.2 Data Loading, ROI Plotting and Correlation Calculation (sc_wholebrain_group_final.py)
+3.2 Data Loading, ROI Plotting and Correlation Calculation (data_prep_final.py)
 	- Load tVNS data and check out its properties (header, affine, ...)
-	- Create and load seperate files for single subject data (individual data of each participant, 
-	  named by their ID)
+	- Create and load seperate files for individual datasets (for each participant, named by their ID))
 	- Create mean image of individual data files
 	- Try different plotting options 
 	- Calculate spatial correlations of the maps of tVNS-induced changes with 11 PET receptor maps 
-	  on group and individual level
- 3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py) 
+	  on group and individual level 
+
+ 3.3 Randomization of the tVNS effect (permutation_tVNS_effect_final.py) (A)
+	- Create a permutation design that preserves spatial data structure 
+	- Randomize the algebraic sign of individual maps of tVNS-induced changes (whole-brain maps, group level)
+	- Calculate the spatial correlations of the randomized maps with the receptor maps, permute 1000 times
+	- Plot and compare to the non-randomized (original) correlation value
+
+B??
+
  3.4 Spatial Null Models of the Maps of tVNS-induced Changes with PET Receptor Maps 
- (Group + Ind. Level - Cortical - Parcellation with Schaefer - sc_groupind_parc_cortical.py)
+    (sc_groupind_parc_cortical_final.py) (C) 
 	 - Load and prep data as previously shown 
 	 - Transform data and annotation from MNI152 (volumetric) to fsLR (surface-based) space
-	- Parcellate data and annotation with Schaefer2018 (Cortical Brain Atlas) 
+	- Parcellate data and annotation with Schaefer2018 (Human Cerebral Cortex Atlas) 
 	- Group Level: Calculate nulls and spatial correlations for the maps of tVNS-induced changes with 
-	  11 PET receptor maps 
+	  PET receptor maps for noradrenaline, dopamine and serotonin
 	- Individual Level: Same as on group level
-	- Heatmap plotting on group and individual level
+	- Heatmap plotting on individual level
+
 3.5 Comparison of Cortical and Subcortical Correlations 
 (Group + Ind. Level - Parcellation with Schaefer and Tian - sc_groupind_parc_cort_subcort.py)
 	- Download Melbourne Subcortical Brain Atlas (Ye Tian): 
